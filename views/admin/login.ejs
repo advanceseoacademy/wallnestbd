@@ -1,0 +1,30 @@
+<!DOCTYPE html>
+<html lang="bn">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<%- include('../partials/favicon') %>
+<title>Admin Login — WallNest BD</title>
+<link href="https://fonts.googleapis.com/css2?family=Syne:wght@700&family=Hind+Siliguri:wght@400;600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="/css/admin.css">
+<style>
+  body { display:flex; align-items:center; justify-content:center; min-height:100vh; background:linear-gradient(160deg, #0071CE 0%, #004F93 40%, #F8F9FA 40%); }
+  .login-box { background:var(--surface); border:1px solid var(--border); border-radius:14px; padding:36px; width:100%; max-width:400px; box-shadow:0 12px 40px rgba(0,79,147,0.15); }
+  .login-box h1 { font-family:'Syne',sans-serif; margin-bottom:8px; }
+  .login-box p { color:var(--muted); font-size:14px; margin-bottom:24px; }
+  .err { background:var(--red-dim); color:var(--red); padding:10px; border-radius:8px; margin-bottom:16px; font-size:13px; }
+</style>
+</head>
+<body>
+<div class="login-box">
+  <img src="/images/wallnestbd-logo.png?v=4" alt="WallNest BD" class="login-logo" width="320" height="80">
+  <p>অ্যাডমিন প্যানেলে লগইন করুন</p>
+  <% if (error) { %><div class="err"><%= error %></div><% } %>
+  <form method="post" action="/api/admin/login">
+    <div class="form-group"><label class="form-label">ইউজারনেম</label><input class="form-input" name="username" required></div>
+    <div class="form-group"><label class="form-label">পাসওয়ার্ড</label><input class="form-input" type="password" name="password" required></div>
+    <button class="btn-block" type="submit">লগইন</button>
+  </form>
+</div>
+</body>
+</html>

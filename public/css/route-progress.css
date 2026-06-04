@@ -1,0 +1,19 @@
+/* Thin top bar during Next.js client navigation (not full-page reload) */
+body.route-loading::before {
+  content: '';
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 3px;
+  z-index: 99999;
+  background: linear-gradient(90deg, #0071ce, #ffc220, #0071ce);
+  background-size: 200% 100%;
+  animation: routeProgress 0.8s linear infinite;
+  pointer-events: none;
+}
+
+@keyframes routeProgress {
+  0% { background-position: 0% 0; }
+  100% { background-position: 200% 0; }
+}

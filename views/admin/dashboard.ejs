@@ -1,0 +1,39 @@
+<%- include('partials/head', { title: 'ড্যাশবোর্ড' }) %>
+<%- include('partials/sidebar', { page: 'dashboard', admin }) %>
+<div class="main">
+  <div class="topbar">
+    <div><div class="page-title">ড্যাশবোর্ড ওভারভিউ</div><div class="page-subtitle">WallNest BD — ওয়াল আর্ট · ৫ ক্যাটাগরি</div></div>
+    <div class="topbar-right"><div class="date-chip" id="dateChip">📅</div></div>
+  </div>
+  <div class="content">
+    <div class="stat-row" id="statRow">
+      <div class="stat-card blue"><div class="stat-top"><div class="stat-icon blue">💰</div></div><div class="stat-value" id="statRevenue">৳0</div><div class="stat-label">মোট রেভিনিউ (verified)</div></div>
+      <div class="stat-card green"><div class="stat-top"><div class="stat-icon green">📦</div></div><div class="stat-value" id="statOrders">0</div><div class="stat-label">মোট অর্ডার</div><div class="stat-sub" id="statToday">আজ: 0</div></div>
+      <div class="stat-card amber"><div class="stat-top"><div class="stat-icon amber">🖼️</div></div><div class="stat-value" id="statProducts">0</div><div class="stat-label">ওয়াল আর্ট পণ্য</div></div>
+      <div class="stat-card red"><div class="stat-top"><div class="stat-icon red">💳</div></div><div class="stat-value" id="statPending">0</div><div class="stat-label">পেমেন্ট যাচাই বাকি</div></div>
+    </div>
+    <div class="grid-2-1">
+      <div class="card">
+        <div class="card-header"><div class="card-title"><div class="dot"></div> রেভিনিউ (৭ দিন)</div></div>
+        <div class="card-body"><div class="chart-area" id="chartArea"><div class="chart-y-lines"><div class="chart-y-line"></div><div class="chart-y-line"></div><div class="chart-y-line"></div></div></div></div>
+      </div>
+      <div class="card">
+        <div class="card-header"><div class="card-title">🏆 টপ পণ্য</div></div>
+        <div class="card-body" style="padding-top:12px;" id="topProductsList"></div>
+      </div>
+    </div>
+    <div class="grid-2-1">
+      <div class="card">
+        <div class="card-header"><div class="card-title">📋 সাম্প্রতিক অর্ডার</div><a href="/admin/orders" class="card-btn">সব দেখুন</a></div>
+        <div class="table-wrap"><table><thead><tr><th>ID</th><th>কাস্টমার</th><th>পেমেন্ট</th><th>স্ট্যাটাস</th><th>মোট</th></tr></thead><tbody id="ordersTableBody"></tbody></table></div>
+      </div>
+      <div class="card">
+        <div class="card-header"><div class="card-title">🖼️ ওয়াল আর্ট ক্যাটাগরি</div><a href="/admin/products" class="card-btn">পণ্য দেখুন</a></div>
+        <div class="card-body admin-catalog-body" id="categoryLegend"></div>
+      </div>
+    </div>
+  </div>
+</div>
+<script src="/js/admin-common.js"></script>
+<script src="/js/admin-dashboard.js"></script>
+</body></html>

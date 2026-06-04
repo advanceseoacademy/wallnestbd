@@ -1,0 +1,209 @@
+<!DOCTYPE html>
+<html lang="bn">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<%- include('partials/favicon') %>
+<title><%= product.name %> — WallNest BD</title>
+<meta name="description" content="<%= product.name %> — <%= product.desc ? product.desc.slice(0, 120) : 'WallNest BD' %>">
+<link href="https://fonts.googleapis.com/css2?family=Hind+Siliguri:wght@300;400;500;600;700&family=DM+Sans:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="/css/style.css">
+</head>
+<body>
+
+<%- include('partials/site-header', { categories, cartCount, user, activeNav: product.catSlug }) %>
+
+<div class="product-page">
+  <div class="product-page-inner site-wrap">
+    <nav class="breadcrumb">
+      <a href="/">হোম</a> /
+      <a href="/?category=<%= product.catSlug %>"><%= product.cat %></a> /
+      <span><%= product.name %></span>
+    </nav>
+
+    <div class="product-detail">
+      <div class="product-gallery-col">
+        <div class="product-gallery">
+          <% if (product.badge) { %>
+            <span class="product-detail-badge <%= product.badge %>">
+              <%= product.badge === 'sale' ? '🔥 SALE' : product.badge === 'new' ? '🆕 NEW' : '🌶️ HOT' %>
+            </span>
+          <% } %>
+          <div class="product-gallery-main" id="mainImage">
+            <% if (product.imageUrl) { %>
+              <img src="<%= product.imageUrl %>" alt="<%= product.name %>" id="galleryImg">
+            <% } else { %>
+              <span class="product-gallery-emoji"><%= product.icon %></span>
+            <% } %>
+          </div>
+        </div>
+        <div class="product-mini-perks">
+          <div class="mini-perk"><span>🚚</span><div><strong>ফ্রি ডেলিভারি</strong><small>৳1500+ অর্ডারে</small></div></div>
+          <div class="mini-perk"><span>🔒</span><div><strong>নিরাপদ পেমেন্ট</strong><small>bKash · Rocket · Nagad</small></div></div>
+          <div class="mini-perk"><span>🔄</span><div><strong>সহজ রিটার্ন</strong><small>৩০ দিনের মধ্যে</small></div></div>
+        </div>
+      </div>
+
+      <div class="product-info">
+        <div class="product-cat"><%= product.cat %></div>
+        <h1 class="product-title"><%= product.name %></h1>
+        <% if (product.nameBn) { %><p class="product-title-bn"><%= product.nameBn %></p><% } %>
+
+        <div class="product-rating product-rating-lg">
+          <span class="stars"><%= '★'.repeat(Math.floor(product.rating)) %><%= '☆'.repeat(5 - Math.floor(product.rating)) %></span>
+          <span class="rating-count"><%= product.rating %> · <%= product.reviews.toLocaleString() %> রিভিউ</span>
+          <a href="#reviews" class="rating-link">রিভিউ দেখুন ↓</a>
+        </div>
+
+        <div class="product-price product-price-lg">
+          <span class="price-current">৳<%= product.price.toLocaleString('bn-BD') %></span>
+          <% if (product.original > product.price) { %>
+            <span class="price-original">৳<%= product.original.toLocaleString('bn-BD') %></span>
+            <span class="price-save">সেভ ৳<%= (product.original - product.price).toLocaleString('bn-BD') %> (<%= Math.round((1 - product.price / product.original) * 100) %>% ছাড়)</span>
+          <% } %>
+        </div>
+
+        <div class="product-meta-row">
+          <span>SKU: <strong>WN-<%= product.id %></strong></span>
+          <span>ব্র্যান্ড: <strong>WallNest BD</strong></span>
+        </div>
+
+        <p class="product-desc-short"><%= product.desc || '' %></p>
+
+        <div class="product-stock <%= product.stock > 0 ? 'in-stock' : 'out-stock' %>">
+          <%= product.stock > 0 ? `✅ স্টকে আছে — ${product.stock} পিস বাকি` : '❌ স্টক শেষ — শীঘ্রই আসছে' %>
+        </div>
+
+        <div class="qty-row">
+          <span class="qty-label">পরিমাণ:</span>
+          <div class="qty-control">
+            <button type="button" class="qty-btn-lg" onclick="changeProductQty(-1)">−</button>
+            <input type="number" id="productQty" value="1" min="1" max="<%= Math.min(product.stock, 99) %>" readonly>
+            <button type="button" class="qty-btn-lg" onclick="changeProductQty(1)">+</button>
+          </div>
+        </div>
+
+        <div class="product-actions">
+          <button type="button" class="btn-add-cart btn-lg" onclick="addToCartWithQty(<%= product.id %>)" <%= product.stock <= 0 ? 'disabled' : '' %>>🛒 কার্টে যোগ করুন</button>
+          <button type="button" class="btn-buy-now btn-lg" onclick="buyNowWithQty(<%= product.id %>)" <%= product.stock <= 0 ? 'disabled' : '' %>>⚡ এখনই কিনুন</button>
+        </div>
+
+        <div class="share-row">
+          <span>শেয়ার:</span>
+          <button type="button" class="share-btn" onclick="shareWhatsApp()">WhatsApp</button>
+          <button type="button" class="share-btn" onclick="copyProductLink()">লিংক কপি</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- TABS -->
+    <div class="product-tabs-card">
+      <div class="product-tabs">
+        <button type="button" class="product-tab active" data-tab="desc">বিবরণ</button>
+        <button type="button" class="product-tab" data-tab="specs">স্পেসিফিকেশন</button>
+        <button type="button" class="product-tab" data-tab="reviews">রিভিউ (<%= productReviews.length %>)</button>
+        <button type="button" class="product-tab" data-tab="delivery">ডেলিভারি</button>
+      </div>
+      <div class="product-tab-panel active" id="tab-desc">
+        <h3>পণ্যের বিবরণ</h3>
+        <p><%= product.desc || 'এই পণ্যের বিস্তারিত বিবরণ শীঘ্রই যোগ করা হবে।' %></p>
+      </div>
+      <div class="product-tab-panel" id="tab-specs">
+        <h3>স্পেসিফিকেশন</h3>
+        <table class="spec-table">
+          <tr><td>পণ্যের নাম</td><td><%= product.name %></td></tr>
+          <% if (product.nameBn) { %><tr><td>নাম (বাংলা)</td><td><%= product.nameBn %></td></tr><% } %>
+          <tr><td>ক্যাটাগরি</td><td><%= product.cat %></td></tr>
+          <tr><td>SKU</td><td>WN-<%= product.id %></td></tr>
+          <tr><td>রেটিং</td><td><%= product.rating %> / 5</td></tr>
+          <tr><td>স্টক</td><td><%= product.stock %> পিস</td></tr>
+          <% if (product.badge) { %><tr><td>অফার</td><td><%= product.badge.toUpperCase() %></td></tr><% } %>
+        </table>
+      </div>
+      <div class="product-tab-panel" id="tab-reviews">
+        <h3 id="reviews">গ্রাহকের রিভিউ</h3>
+        <% if (productReviews.length) { %>
+          <div class="review-grid product-reviews">
+            <% productReviews.forEach(function(r) { %>
+              <div class="review-card">
+                <div class="review-top">
+                  <div class="reviewer-avatar"><%= (r.reviewer_name || '?').slice(0, 2) %></div>
+                  <div>
+                    <div class="reviewer-name"><%= r.reviewer_name %></div>
+                    <div class="stars"><%= '★'.repeat(r.rating) %><%= '☆'.repeat(5 - r.rating) %></div>
+                    <div class="reviewer-date"><%= new Date(r.created_at).toLocaleDateString('bn-BD') %></div>
+                  </div>
+                </div>
+                <div class="review-text">"<%= r.comment %>"</div>
+                <% if (r.is_verified) { %><div class="verified-badge">✅ Verified Purchase</div><% } %>
+              </div>
+            <% }); %>
+          </div>
+        <% } else { %>
+          <p class="empty-msg">এখনো কোনো রিভিউ নেই। প্রথম রিভিউ আপনি দিন!</p>
+        <% } %>
+      </div>
+      <div class="product-tab-panel" id="tab-delivery">
+        <h3>ডেলিভারি ও রিটার্ন</h3>
+        <ul class="delivery-list">
+          <li>🚚 ঢাকার ভিতরে ২–৪ কর্মদিবস, ঢাকার বাইরে ৩–৭ কর্মদিবস</li>
+          <li>💰 ৳1500+ অর্ডারে সমগ্র বাংলাদেশে ফ্রি ডেলিভারি</li>
+          <li>💳 bKash, Rocket, Nagad — ম্যানুয়াল পেমেন্ট, Trx ID দিয়ে অর্ডার কনফার্ম</li>
+          <li>🔄 ৩০ দিনের মধ্যে ত্রুটিপূর্ণ পণ্য রিটার্ন/রিপ্লেসমেন্ট</li>
+          <li>📞 সাপোর্ট: 01XXXXXXXXX (সকাল ৯টা – রাত ৯টা)</li>
+        </ul>
+      </div>
+    </div>
+
+    <% if (related.length) { %>
+    <section class="product-section">
+      <div class="section-header">
+        <h2 class="section-title">🔗 সম্পর্কিত পণ্য — <%= product.cat %></h2>
+        <a href="/?category=<%= product.catSlug %>" class="see-all">সব দেখুন →</a>
+      </div>
+      <div class="product-grid">
+        <% related.forEach(function(p) { %>
+          <%- include('partials/product-card', { p: p }) %>
+        <% }); %>
+      </div>
+    </section>
+    <% } %>
+
+    <% if (alsoLike.length) { %>
+    <section class="product-section">
+      <div class="section-header">
+        <h2 class="section-title">✨ আপনার জন্য আরও পণ্য</h2>
+        <a href="/#products" class="see-all">সব পণ্য →</a>
+      </div>
+      <div class="product-grid">
+        <% alsoLike.forEach(function(p) { %>
+          <%- include('partials/product-card', { p: p }) %>
+        <% }); %>
+      </div>
+    </section>
+    <% } %>
+
+    <section class="product-section" id="recentSection" style="display:none;">
+      <h2 class="section-title">🕐 সম্প্রতি দেখা পণ্য</h2>
+      <div class="product-grid" id="recentGrid"></div>
+    </section>
+  </div>
+</div>
+
+<%- include('partials/site-footer') %>
+<%- include('partials/cart-modals') %>
+
+<script>
+  window.__PRODUCT_PAGE__ = <%- JSON.stringify({
+    id: product.id,
+    name: product.name,
+    icon: product.icon,
+    imageUrl: product.imageUrl,
+    price: product.price,
+    catSlug: product.catSlug
+  }) %>;
+</script>
+<script src="/js/app.js"></script>
+<script src="/js/product-page.js"></script>
+</body>
+</html>

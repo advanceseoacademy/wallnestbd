@@ -1,0 +1,358 @@
+const express = require('express');
+const path = require('path');
+const { supabase } = require('../lib/supabase');
+const { adminQuery } = require('../lib/dbAdmin');
+const { requireAdmin } = require('../middleware/adminAuth');
+const { upload } = require('../lib/upload');
+const {
+  WALL_ART_CATEGORY_SLUGS,
+  filterAdminCategories,
+} = require('../lib/catalogCategories');
+
+const router = express.Router();
+
+function mapAdminProduct(p) {
+  const cat = p.categories || {};
+  return {
+    id: p.id,
+    legacyId: p.legacy_id,
+    name: p.name_en,
+    nameBn: p.name_bn,
+    cat: cat.name_en,
+    catId: p.category_id,
+    icon: p.icon,
+    imageUrl: p.image_url,
+    price: Number(p.price),
+    original: Number(p.original_price),
+    stock: p.stock,
+    badge: p.badge,
+    featured: p.is_featured,
+    flash: p.is_flash_sale,
+    desc: p.description,
+  };
+}
+
+// ── Auth pages ──
+router.get('/login', (req, res) => {
+  if (req.session?.admin) return res.redirect('/admin/dashboard');
+  res.render('admin/login', { error: null });
+});
+
+router.post('/login', express.urlencoded({ extended: true }), (req, res) => {
+  const user = process.env.ADMIN_USERNAME || 'admin';
+  const pass = process.env.ADMIN_PASSWORD || 'wallnest123';
+  if (req.body.username === user && req.body.password === pass) {
+    req.session.admin = { username: user };
+    return res.redirect('/admin/dashboard');
+  }
+  res.render('admin/login', { error: 'ভুল ইউজারনেম বা পাসওয়ার্ড' });
+});
+
+router.post('/logout', requireAdmin, (req, res) => {
+  req.session.destroy(() => res.redirect('/admin/login'));
+});
+
+router.get('/', (req, res) => res.redirect('/admin/dashboard'));
+
+// ── Admin pages ──
+router.get('/dashboard', requireAdmin, (req, res) => {
+  res.render('admin/dashboard', { page: 'dashboard', admin: req.session.admin });
+});
+
+router.get('/orders', requireAdmin, (req, res) => {
+  res.render('admin/orders', { page: 'orders', admin: req.session.admin });
+});
+
+router.get('/products', requireAdmin, (req, res) => {
+  res.render('admin/products', { page: 'products', admin: req.session.admin });
+});
+
+router.get('/payments', requireAdmin, (req, res) => {
+  res.render('admin/payments', { page: 'payments', admin: req.session.admin });
+});
+
+// ── Admin API ──
+const api = express.Router();
+api.use(requireAdmin);
+
+api.get('/stats', async (_req, res) => {
+  try {
+    const [{ data: orders }, { data: products }, { count: pendingPay }] =
+      await Promise.all([
+        supabase.from('orders').select('total, status, payment_status, created_at'),
+        supabase.from('products').select('id, name_en, icon, image_url, price, stock'),
+        supabase
+          .from('orders')
+          .select('*', { count: 'exact', head: true })
+          .in('payment_status', ['pending', 'submitted']),
+      ]);
+
+    const all = orders || [];
+    const revenue = all
+      .filter((o) => o.payment_status === 'verified' || o.status === 'confirmed')
+      .reduce((s, o) => s + Number(o.total || 0), 0);
+    const today = new Date().toDateString();
+    const todayOrders = all.filter(
+      (o) => new Date(o.created_at).toDateString() === today
+    ).length;
+
+    const weekDays = ['সোম', 'মঙ্গল', 'বুধ', 'বৃহস্প', 'শুক্র', 'শনি', 'রবি'];
+    const chart = weekDays.map((label, i) => {
+      const d = new Date();
+      d.setDate(d.getDate() - (6 - i));
+      const dayStr = d.toDateString();
+      const dayTotal = all
+        .filter((o) => new Date(o.created_at).toDateString() === dayStr)
+        .reduce((s, o) => s + Number(o.total || 0), 0);
+      return { label, value: Math.round(dayTotal) };
+    });
+
+    const { data: orderItems } = await supabase
+      .from('order_items')
+      .select('product_name, line_total, quantity, product_icon');
+
+    const salesMap = {};
+    (orderItems || []).forEach((item) => {
+      if (!salesMap[item.product_name]) {
+        salesMap[item.product_name] = {
+          name: item.product_name,
+          icon: item.product_icon || '📦',
+          total: 0,
+          qty: 0,
+        };
+      }
+      salesMap[item.product_name].total += Number(item.line_total || 0);
+      salesMap[item.product_name].qty += item.quantity || 0;
+    });
+    const topProducts = Object.values(salesMap)
+      .sort((a, b) => b.total - a.total)
+      .slice(0, 5);
+    const maxSales = topProducts[0]?.total || 1;
+
+    const { data: catalogCats } = await supabase
+      .from('categories')
+      .select('id, slug, name_en, name_bn, icon, catalog_share')
+      .in('slug', WALL_ART_CATEGORY_SLUGS)
+      .order('sort_order');
+
+    const { data: allProducts } = await supabase
+      .from('products')
+      .select('category_id');
+
+    const countByCategory = {};
+    (allProducts || []).forEach((p) => {
+      if (p.category_id) {
+        countByCategory[p.category_id] = (countByCategory[p.category_id] || 0) + 1;
+      }
+    });
+
+    const categories = (catalogCats || []).map((c) => ({
+      name: c.name_en,
+      nameBn: c.name_bn,
+      icon: c.icon || '🖼️',
+      slug: c.slug,
+      pct: c.catalog_share,
+      productCount: countByCategory[c.id] || 0,
+    }));
+
+    res.json({
+      revenue,
+      orderCount: all.length,
+      todayOrders,
+      pendingPayments: pendingPay || 0,
+      productCount: (products || []).length,
+      lowStock: (products || []).filter((p) => p.stock < 10).length,
+      chart,
+      topProducts: topProducts.map((p, i) => ({
+        ...p,
+        rank: i + 1,
+        pct: Math.round((p.total / maxSales) * 100),
+        sales: `৳${p.total.toLocaleString('bn-BD')}`,
+      })),
+      categories,
+    });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+api.get('/orders', async (req, res) => {
+  try {
+    const { data, error } = await supabase
+      .from('orders')
+      .select('*, order_items(product_name, product_icon, quantity, line_total)')
+      .order('created_at', { ascending: false })
+      .limit(50);
+    if (error) throw error;
+
+    res.json({
+      orders: (data || []).map((o) => ({
+        id: o.id,
+        orderNumber: o.order_number,
+        customer: o.shipping_name,
+        phone: o.shipping_phone,
+        status: o.status,
+        paymentMethod: o.payment_method,
+        paymentStatus: o.payment_status,
+        transactionId: o.transaction_id,
+        total: Number(o.total),
+        createdAt: o.created_at,
+        items: o.order_items || [],
+        firstProduct: o.order_items?.[0],
+      })),
+    });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+api.patch('/orders/:id', async (req, res) => {
+  try {
+    const { status, payment_status } = req.body;
+    const updates = {};
+    if (status) updates.status = status;
+    if (payment_status) updates.payment_status = payment_status;
+
+    const { data, error } = await supabase
+      .from('orders')
+      .update(updates)
+      .eq('id', req.params.id)
+      .select()
+      .single();
+    if (error) throw error;
+    res.json({ ok: true, order: data });
+  } catch (err) {
+    res.status(400).json({ error: err.message });
+  }
+});
+
+api.get('/products', async (_req, res) => {
+  try {
+    const { data, error } = await supabase
+      .from('products')
+      .select('*, categories(name_en, slug)')
+      .order('created_at', { ascending: false });
+    if (error) throw error;
+    res.json({ products: (data || []).map(mapAdminProduct) });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+api.get('/categories', async (_req, res) => {
+  const { data } = await supabase
+    .from('categories')
+    .select('id, slug, name_en, name_bn, icon, catalog_share')
+    .in('slug', WALL_ART_CATEGORY_SLUGS)
+    .order('sort_order');
+  res.json({ categories: filterAdminCategories(data) });
+});
+
+api.post('/products', async (req, res) => {
+  try {
+    const b = req.body;
+    const { data, error } = await supabase
+      .from('products')
+      .insert({
+        name_en: b.name_en,
+        name_bn: b.name_bn || null,
+        description: b.description || null,
+        category_id: b.category_id || null,
+        icon: b.icon || '📦',
+        image_url: b.image_url || null,
+        price: Number(b.price),
+        original_price: Number(b.original_price || b.price),
+        stock: Number(b.stock || 100),
+        badge: b.badge || null,
+        is_featured: b.is_featured !== false,
+        is_flash_sale: !!b.is_flash_sale,
+        rating: Number(b.rating || 4.5),
+        review_count: Number(b.review_count || 0),
+      })
+      .select()
+      .single();
+    if (error) throw error;
+    res.json({ ok: true, product: data });
+  } catch (err) {
+    res.status(400).json({ error: err.message });
+  }
+});
+
+api.put('/products/:id', async (req, res) => {
+  try {
+    const b = req.body;
+    const { data, error } = await supabase
+      .from('products')
+      .update({
+        name_en: b.name_en,
+        name_bn: b.name_bn,
+        description: b.description,
+        category_id: b.category_id,
+        icon: b.icon,
+        image_url: b.image_url,
+        price: Number(b.price),
+        original_price: Number(b.original_price),
+        stock: Number(b.stock),
+        badge: b.badge || null,
+        is_featured: b.is_featured,
+        is_flash_sale: b.is_flash_sale,
+      })
+      .eq('id', req.params.id)
+      .select()
+      .single();
+    if (error) throw error;
+    res.json({ ok: true, product: data });
+  } catch (err) {
+    res.status(400).json({ error: err.message });
+  }
+});
+
+api.delete('/products/:id', async (req, res) => {
+  try {
+    const { error } = await supabase.from('products').delete().eq('id', req.params.id);
+    if (error) throw error;
+    res.json({ ok: true });
+  } catch (err) {
+    res.status(400).json({ error: err.message });
+  }
+});
+
+api.post('/upload', upload.single('image'), (req, res) => {
+  if (!req.file) return res.status(400).json({ error: 'No file uploaded' });
+  const url = `/uploads/products/${req.file.filename}`;
+  res.json({ ok: true, url });
+});
+
+api.get('/settings/payments', async (_req, res) => {
+  const { data } = await supabase
+    .from('site_settings')
+    .select('value')
+    .eq('key', 'payment_methods')
+    .maybeSingle();
+  res.json({ payments: data?.value || {} });
+});
+
+api.put('/settings/payments', async (req, res) => {
+  try {
+    const { error } = await supabase
+      .from('site_settings')
+      .upsert({
+        key: 'payment_methods',
+        value: req.body.payments,
+        updated_at: new Date().toISOString(),
+      });
+    if (error) {
+      await adminQuery(
+        `UPDATE site_settings SET value = $1::jsonb, updated_at = NOW() WHERE key = 'payment_methods'`,
+        [JSON.stringify(req.body.payments)]
+      );
+    }
+    res.json({ ok: true });
+  } catch (err) {
+    res.status(400).json({ error: err.message });
+  }
+});
+
+router.use('/api', api);
+
+module.exports = router;

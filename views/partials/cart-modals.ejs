@@ -1,0 +1,83 @@
+<div class="cart-overlay" id="cartOverlay">
+  <div class="cart-backdrop" onclick="toggleCart()"></div>
+  <div class="cart-panel">
+    <div class="cart-header">
+      <h3>🛒 আপনার কার্ট</h3>
+      <button class="modal-close" type="button" onclick="toggleCart()">✕</button>
+    </div>
+    <div class="cart-items" id="cartItems"></div>
+    <div class="cart-footer" id="cartFooter" style="display:none;">
+      <div class="cart-total-row"><span>সাবটোটাল</span><span id="cartSubtotal">৳0</span></div>
+      <div class="cart-total-row"><span>শিপিং</span><span id="cartShipping" style="color:var(--success)">FREE</span></div>
+      <div class="cart-total-row grand"><span>মোট</span><span id="cartTotal">৳0</span></div>
+      <button class="btn-block" style="margin-top:14px;" type="button" onclick="openCheckout(); toggleCart();">চেকআউট →</button>
+    </div>
+  </div>
+</div>
+
+<div class="modal-overlay" id="loginModal">
+  <div class="modal">
+    <div class="modal-header"><h3>👤 লগইন</h3><button class="modal-close" type="button" onclick="closeModal('loginModal')">✕</button></div>
+    <div class="modal-body">
+      <form onsubmit="login(event)">
+        <div class="form-group"><label class="form-label">ইমেইল</label><input type="email" class="form-input" id="loginEmail" required></div>
+        <div class="form-group"><label class="form-label">পাসওয়ার্ড</label><input type="password" class="form-input" id="loginPassword" required></div>
+        <button class="btn-block" type="submit">লগইন</button>
+      </form>
+      <p style="text-align:center;margin-top:14px;font-size:13.5px;color:var(--text-muted)">অ্যাকাউন্ট নেই? <a href="#" style="color:var(--primary);font-weight:600;" onclick="closeModal('loginModal'); openModal('registerModal'); return false;">রেজিস্ট্রেশন</a></p>
+    </div>
+  </div>
+</div>
+
+<div class="modal-overlay" id="registerModal">
+  <div class="modal">
+    <div class="modal-header"><h3>📝 রেজিস্ট্রেশন</h3><button class="modal-close" type="button" onclick="closeModal('registerModal')">✕</button></div>
+    <div class="modal-body">
+      <form onsubmit="register(event)">
+        <div class="form-row">
+          <div class="form-group"><label class="form-label">প্রথম নাম</label><input type="text" class="form-input" id="regFirst" required></div>
+          <div class="form-group"><label class="form-label">শেষ নাম</label><input type="text" class="form-input" id="regLast"></div>
+        </div>
+        <div class="form-group"><label class="form-label">ইমেইল</label><input type="email" class="form-input" id="regEmail" required></div>
+        <div class="form-group"><label class="form-label">পাসওয়ার্ড</label><input type="password" class="form-input" id="regPassword" required minlength="8"></div>
+        <button class="btn-block" type="submit">অ্যাকাউন্ট তৈরি</button>
+      </form>
+    </div>
+  </div>
+</div>
+
+<div class="modal-overlay" id="checkoutModal">
+  <div class="modal" style="max-width:520px;">
+    <div class="modal-header"><h3>💳 চেকআউট — ম্যানুয়াল পেমেন্ট</h3><button class="modal-close" type="button" onclick="closeModal('checkoutModal')">✕</button></div>
+    <div class="modal-body">
+      <form onsubmit="placeOrder(event)">
+        <p style="font-size:13px;color:var(--primary);font-weight:600;margin-bottom:12px;">📦 ডেলিভারি ঠিকানা</p>
+        <div class="form-group"><label class="form-label">পূর্ণ নাম *</label><input type="text" class="form-input" id="shipName" required></div>
+        <div class="form-group"><label class="form-label">মোবাইল *</label><input type="text" class="form-input" id="shipPhone" placeholder="01XXXXXXXXX" required></div>
+        <div class="form-group" id="checkoutEmailGroup">
+          <label class="form-label">ইমেইল (ঐচ্ছিক)</label>
+          <input type="email" class="form-input" id="checkoutEmail" placeholder="অ্যাকাউন্টে অর্ডার লিংক করতে">
+          <p style="font-size:11.5px;color:var(--text-muted);margin-top:4px">লগইন করলে একই ইমেইল/ফোনের গেস্ট অর্ডার দেখা যাবে।</p>
+        </div>
+        <div class="form-group"><label class="form-label">ঠিকানা *</label><input type="text" class="form-input" id="shipAddress" required></div>
+        <div class="form-row">
+          <div class="form-group"><label class="form-label">জেলা/শহর</label><input type="text" class="form-input" id="shipCity"></div>
+          <div class="form-group"><label class="form-label">পোস্ট কোড</label><input type="text" class="form-input" id="shipZip"></div>
+        </div>
+
+        <p style="font-size:13px;color:var(--primary);font-weight:600;margin:16px 0 10px;">💰 পেমেন্ট পদ্ধতি (ম্যানুয়াল)</p>
+        <div id="paymentMethods" style="display:flex;flex-direction:column;gap:8px;margin-bottom:12px;"></div>
+        <div id="paymentDetails" style="display:none;background:#EEF4FF;border-radius:8px;padding:14px;margin-bottom:14px;font-size:13px;line-height:1.6;"></div>
+
+        <div class="form-group"><label class="form-label">পেমেন্ট করার নম্বর *</label><input type="text" class="form-input" id="paymentPhone" placeholder="যে নম্বর থেকে পেমেন্ট করেছেন" required></div>
+        <div class="form-group"><label class="form-label">Transaction ID *</label><input type="text" class="form-input" id="transactionId" placeholder="bKash/Rocket/Nagad Trx ID" required></div>
+        <div class="form-group"><label class="form-label">নোট (ঐচ্ছিক)</label><input type="text" class="form-input" id="customerNote"></div>
+
+        <p style="font-size:12px;color:var(--text-muted);margin-bottom:12px;">পেমেন্ট যাচাই হলে অর্ডার কনফার্ম হবে। ৳1500+ অর্ডারে ফ্রি ডেলিভারি।</p>
+        <button class="btn-block" style="background:var(--success);" type="submit">✅ অর্ডার কনফার্ম করুন</button>
+      </form>
+    </div>
+  </div>
+</div>
+
+<div class="toast-container" id="toastContainer"></div>

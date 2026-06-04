@@ -1,0 +1,18 @@
+<%- include('partials/head', { title: 'পেমেন্ট' }) %>
+<%- include('partials/sidebar', { page: 'payments', admin }) %>
+<div class="main">
+  <div class="topbar"><div><div class="page-title">ম্যানুয়াল পেমেন্ট সেটিংস</div><div class="page-subtitle">bKash · Rocket · Nagad</div></div></div>
+  <div class="content">
+    <div class="card">
+      <div class="card-header"><div class="card-title">💳 পেমেন্ট অ্যাকাউন্ট</div></div>
+      <div class="card-body">
+        <p style="color:var(--muted);font-size:13px;margin-bottom:20px;">গ্রাহক এই নম্বরে পেমেন্ট করবেন। অর্ডারের পর Transaction ID যাচাই করুন।</p>
+        <form id="paymentsForm"></form>
+        <button class="btn-block" type="button" id="savePayments" style="margin-top:20px;max-width:300px;">সেভ করুন</button>
+      </div>
+    </div>
+  </div>
+</div>
+<script src="/js/admin-common.js"></script>
+<script src="/js/admin-payments.js"></script>
+</body></html>

@@ -1,0 +1,35 @@
+<a href="/product/<%= p.id %>" class="product-card" data-product-id="<%= p.id %>">
+  <% if (p.badge) { %>
+    <div class="product-badge <%= p.badge === 'new' ? 'new' : p.badge === 'hot' ? 'hot' : '' %>">
+      <%= p.badge === 'sale' ? '🔥 SALE' : p.badge === 'new' ? '🆕 NEW' : '🌶️ HOT' %>
+    </div>
+  <% } %>
+  <button type="button" class="product-fav" onclick="event.preventDefault(); event.stopPropagation(); toggleFav(this)">🤍</button>
+  <div class="product-img">
+    <% if (p.imageUrl) { %>
+      <img src="<%= p.imageUrl %>" alt="<%= p.name %>" style="width:100%;height:100%;object-fit:cover;">
+    <% } else { %>
+      <%= p.icon %>
+    <% } %>
+  </div>
+  <div class="product-body">
+    <div class="product-cat"><%= p.cat %></div>
+    <div class="product-name"><%= p.name %></div>
+    <div class="product-name-bn"><%= p.nameBn %></div>
+    <div class="product-rating">
+      <span class="stars"><%= '★'.repeat(Math.floor(p.rating)) %><%= '☆'.repeat(5 - Math.floor(p.rating)) %></span>
+      <span class="rating-count"><%= p.rating %> (<%= p.reviews.toLocaleString() %>)</span>
+    </div>
+    <div class="product-price">
+      <span class="price-current">৳<%= p.price.toLocaleString('bn-BD') %></span>
+      <% if (p.original > p.price) { %>
+        <span class="price-original">৳<%= p.original.toLocaleString('bn-BD') %></span>
+        <span class="price-save">সেভ ৳<%= (p.original - p.price).toLocaleString('bn-BD') %></span>
+      <% } %>
+    </div>
+    <div class="product-footer">
+      <button type="button" class="btn-add-cart" onclick="event.preventDefault(); event.stopPropagation(); addToCart(<%= p.id %>)">🛒 কার্টে যোগ</button>
+      <button type="button" class="btn-buy-now" onclick="event.preventDefault(); event.stopPropagation(); buyNow(<%= p.id %>)">Buy Now</button>
+    </div>
+  </div>
+</a>

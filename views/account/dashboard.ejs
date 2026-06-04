@@ -1,0 +1,373 @@
+<!DOCTYPE html>
+<html lang="bn">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<%- include('../partials/favicon') %>
+<title>আমার অ্যাকাউন্ট — WallNest BD</title>
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=Hind+Siliguri:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="/css/style.css">
+<link rel="stylesheet" href="/css/user-dashboard.css?v=13">
+</head>
+<body class="account-page">
+<script>window.__ACCOUNT__ = <%- accountJson %>;</script>
+
+<%- include('../partials/site-header', { categories, cartCount, user, activeNav: 'account' }) %>
+
+<div class="account-dashboard">
+<div class="dashboard-shell">
+<div class="layout">
+
+<!-- ── SIDEBAR ── -->
+<aside class="sidebar">
+  <div class="sidebar-top">
+    <div class="user-profile-card">
+      <div class="user-avatar-ring">
+        <div class="user-avatar-inner" id="sidebarInitials">—</div>
+      </div>
+      <div>
+        <div class="user-name" id="sidebarName">—</div>
+        <div class="user-email" id="sidebarEmail">—</div>
+      </div>
+      <div class="user-tier" id="sidebarTier">⭐ —</div>
+    </div>
+  </div>
+
+  <div class="sidebar-nav">
+    <div class="nav-section-label">আমার অ্যাকাউন্ট</div>
+    <div class="nav-item active" onclick="showPage('dashboard',this)">
+      <span class="nav-icon">🏠</span> ড্যাশবোর্ড
+    </div>
+    <div class="nav-item" onclick="showPage('orders',this)">
+      <span class="nav-icon">📦</span> আমার অর্ডার
+      <span class="nav-badge" id="badgeOrders" style="display:none"></span>
+    </div>
+    <div class="nav-item" onclick="showPage('wishlist',this)">
+      <span class="nav-icon">❤️</span> উইশলিস্ট
+    </div>
+    <div class="nav-item" onclick="showPage('address',this)">
+      <span class="nav-icon">📍</span> ঠিকানা ম্যানেজ
+    </div>
+    <div class="nav-item" onclick="showPage('coupons',this)">
+      <span class="nav-icon">🏷️</span> কুপন ও অফার
+      <span class="nav-badge amber" id="badgeCoupons" style="display:none"></span>
+    </div>
+
+    <div class="nav-section-label">প্রোফাইল</div>
+    <div class="nav-item" onclick="showPage('profile',this)">
+      <span class="nav-icon">👤</span> প্রোফাইল সেটিংস
+    </div>
+    <div class="nav-item" onclick="showPage('notifications',this)">
+      <span class="nav-icon">🔔</span> নোটিফিকেশন
+      <span class="nav-badge" id="badgeNotif" style="display:none"></span>
+    </div>
+    <div class="nav-item" onclick="showPage('rewards',this)">
+      <span class="nav-icon">🎁</span> রিওয়ার্ড পয়েন্ট
+    </div>
+  </div>
+
+  <div class="sidebar-footer">
+    <button type="button" class="logout-btn" id="logoutBtn">🚪 লগআউট / Sign Out</button>
+  </div>
+</aside>
+
+<!-- ── MAIN ── -->
+<div class="main">
+  <div class="dash-topbar">
+    <div class="dash-topbar-title" id="pageTitle">আমার ড্যাশবোর্ড</div>
+    <div class="dash-topbar-right">
+      <div class="greeting-chip" id="greetingChip">👋 Good morning</div>
+      <div class="tb-btn" onclick="showPage('notifications', document.querySelector('.nav-item[onclick*=notifications]'))" title="নোটিফিকেশন">
+        🔔 <div class="tb-notif"></div>
+      </div>
+      <a class="tb-btn" href="/" title="শপিং">🛒</a>
+    </div>
+  </div>
+
+  <!-- ════════ DASHBOARD PAGE ════════ -->
+  <div class="content page active" id="page-dashboard">
+
+    <!-- WELCOME HERO -->
+    <div class="welcome-hero">
+      <div class="welcome-left">
+        <div class="welcome-hi">🌟 আপনাকে স্বাগতম</div>
+        <div class="welcome-name"><span id="welcomeGreeting">Good morning</span>, <span id="welcomeNameSpan">—</span></div>
+        <div class="welcome-sub" id="welcomeSub">—</div>
+        <div class="welcome-btns">
+          <button class="btn-hero" onclick="showPage('orders', null)">📦 অর্ডার ট্র্যাক করুন</button>
+          <button class="btn-hero-ghost" onclick="showPage('wishlist', null)">❤️ উইশলিস্ট দেখুন</button>
+        </div>
+      </div>
+      <div class="welcome-right">
+        <div class="welcome-stat">
+          <div class="ws-value" id="statOrders">0</div>
+          <div class="ws-label">মোট অর্ডার</div>
+        </div>
+        <div class="welcome-stat">
+          <div class="ws-value" id="statPoints">0</div>
+          <div class="ws-label">পয়েন্ট অর্জিত</div>
+        </div>
+        <div class="welcome-stat">
+          <div class="ws-value" id="statRating">—</div>
+          <div class="ws-label">অভিজ্ঞতা</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- QUICK ACTIONS -->
+    <div class="quick-actions">
+      <div class="qa-card" onclick="showPage('orders',null)">
+        <div class="qa-icon qa-icon--blue">📦</div>
+        <div class="qa-label">আমার অর্ডার</div>
+      </div>
+      <div class="qa-card" onclick="showPage('wishlist',null)">
+        <div class="qa-icon qa-icon--rose">❤️</div>
+        <div class="qa-label">উইশলিস্ট</div>
+      </div>
+      <div class="qa-card" onclick="showPage('address',null)">
+        <div class="qa-icon qa-icon--green">📍</div>
+        <div class="qa-label">ঠিকানা</div>
+      </div>
+      <div class="qa-card" onclick="showPage('coupons',null)">
+        <div class="qa-icon qa-icon--amber">🏷️</div>
+        <div class="qa-label">কুপন</div>
+      </div>
+      <div class="qa-card" onclick="showPage('rewards',null)">
+        <div class="qa-icon qa-icon--gold">🎁</div>
+        <div class="qa-label">রিওয়ার্ড</div>
+      </div>
+    </div>
+
+    <!-- ORDERS + REWARDS -->
+    <div class="grid-3-2">
+
+      <!-- RECENT ORDERS -->
+      <div class="card">
+        <div class="card-header">
+          <div class="card-title">📋 সাম্প্রতিক অর্ডার</div>
+          <a class="card-link" onclick="showPage('orders',null)">সব দেখুন →</a>
+        </div>
+        <div class="card-body" style="padding-top:8px;">
+          <div id="dashOrderList"></div>
+        </div>
+      </div>
+
+      <!-- REWARDS + TRACK -->
+      <div class="dash-col-side">
+
+        <!-- REWARD CARD -->
+        <div class="reward-card">
+          <div class="reward-label">💎 আপনার রিওয়ার্ড পয়েন্ট</div>
+          <div class="reward-points" id="dashRewardPoints">0</div>
+          <div class="reward-sub" id="dashRewardSub">প্রতি অর্ডারে পয়েন্ট অর্জন করুন</div>
+          <div class="reward-progress-bg">
+            <div class="reward-progress-fill" id="dashRewardFill"></div>
+          </div>
+          <div class="reward-progress-label">
+            <span id="dashRewardPtsLabel">0 পয়েন্ট</span>
+            <span id="dashRewardGoalLabel">—</span>
+          </div>
+          <div class="reward-actions">
+            <button class="reward-btn">🎁 রিডিম করুন</button>
+            <button class="reward-btn">📊 ইতিহাস</button>
+          </div>
+        </div>
+
+        <!-- ORDER TRACKING MINI -->
+        <div class="card" id="trackingCard" style="display:none">
+          <div class="card-header">
+            <div class="card-title">🚚 লাইভ ট্র্যাকিং</div>
+            <span style="font-size:12px;color:var(--muted)" id="trackingOrderId"></span>
+          </div>
+          <div class="card-body" id="trackingBody">
+            <div style="font-size:13px;margin-bottom:4px;" id="trackingProductName"></div>
+            <div style="font-size:12px;color:var(--muted);margin-bottom:4px;" id="trackingDeliveryNote"></div>
+            <div class="track-bar" id="trackingBar"></div>
+          </div>
+        </div>
+
+      </div>
+    </div>
+
+    <!-- NOTIFICATIONS PREVIEW -->
+    <div class="grid-2-1">
+      <div class="card">
+        <div class="card-header">
+          <div class="card-title">🔔 সাম্প্রতিক নোটিফিকেশন</div>
+          <a class="card-link" onclick="showPage('notifications',null)">সব দেখুন →</a>
+        </div>
+        <div class="card-body" style="padding-top:4px;" id="dashNotifList"></div>
+      </div>
+      <div class="card">
+        <div class="card-header">
+          <div class="card-title">❤️ উইশলিস্ট হাইলাইট</div>
+          <a class="card-link" onclick="showPage('wishlist',null)">সব →</a>
+        </div>
+        <div class="card-body card-body--wish">
+          <div class="wishlist-grid is-empty" id="dashWishGrid"></div>
+        </div>
+      </div>
+    </div>
+
+  </div>
+
+  <!-- ════════ ORDERS PAGE ════════ -->
+  <div class="content page" id="page-orders">
+    <div class="card">
+      <div class="card-header">
+        <div class="card-title">📦 আমার সকল অর্ডার</div>
+      </div>
+      <div class="tabs" id="orderTabs">
+        <div class="tab active" onclick="setOrderTab(this,'all')">সব অর্ডার</div>
+        <div class="tab" onclick="setOrderTab(this,'processing')">প্রসেসিং</div>
+        <div class="tab" onclick="setOrderTab(this,'shipped')">শিপমেন্টে</div>
+        <div class="tab" onclick="setOrderTab(this,'delivered')">ডেলিভার্ড</div>
+        <div class="tab" onclick="setOrderTab(this,'cancelled')">বাতিল</div>
+      </div>
+      <div class="card-body" id="fullOrderList"></div>
+    </div>
+  </div>
+
+  <!-- ════════ WISHLIST PAGE ════════ -->
+  <div class="content page" id="page-wishlist">
+    <div class="card">
+      <div class="card-header">
+        <div class="card-title" id="wishlistTitle">❤️ আমার উইশলিস্ট</div>
+      </div>
+      <div class="card-body">
+        <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(180px,1fr));gap:16px;" id="fullWishGrid"></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ════════ ADDRESS PAGE ════════ -->
+  <div class="content page" id="page-address">
+    <div class="card">
+      <div class="card-header">
+        <div class="card-title">📍 আমার ঠিকানা</div>
+      </div>
+      <div class="card-body">
+        <div class="address-list" id="addressList"></div>
+        <button type="button" class="btn-add" id="btnAddAddress">➕ নতুন ঠিকানা যোগ করুন</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ════════ COUPONS PAGE ════════ -->
+  <div class="content page" id="page-coupons">
+    <div class="card">
+      <div class="card-header">
+        <div class="card-title">🏷️ আমার কুপন ও অফার</div>
+        <span style="font-size:12.5px;color:var(--muted)" id="couponCountLabel">—</span>
+      </div>
+      <div class="card-body">
+        <div class="coupon-list" id="couponList"></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ════════ PROFILE PAGE ════════ -->
+  <div class="content page" id="page-profile">
+    <div class="card">
+      <div class="profile-header">
+        <div class="profile-avatar-lg">
+          <div class="profile-avatar-inner" id="profileInitials">—</div>
+        </div>
+        <div class="profile-info">
+          <h3 id="profileDisplayName">—</h3>
+          <p id="profileMemberLine">—</p>
+        </div>
+      </div>
+      <div class="card-body">
+        <p class="profile-hint">নাম ও ফোন নিচে সরাসরি এডিট করে সেভ করুন। ইমেইল/ঠিকানা অর্ডার থেকে আসে।</p>
+        <div class="form-grid" id="profileForm">
+          <div class="form-group">
+            <label class="form-label">প্রথম নাম</label>
+            <input class="form-input profile-editable" id="f_first" value="" autocomplete="given-name">
+          </div>
+          <div class="form-group">
+            <label class="form-label">শেষ নাম</label>
+            <input class="form-input profile-editable" id="f_last" value="" autocomplete="family-name">
+          </div>
+          <div class="form-group">
+            <label class="form-label">ইমেইল</label>
+            <input class="form-input" id="f_email" value="" readonly tabindex="-1" title="ইমেইল পরিবর্তন যোগ্য নয়">
+          </div>
+          <div class="form-group">
+            <label class="form-label">ফোন নম্বর</label>
+            <input class="form-input profile-editable" id="f_phone" value="" autocomplete="tel" inputmode="tel">
+          </div>
+          <div class="form-group">
+            <label class="form-label">জন্ম তারিখ</label>
+            <input class="form-input" id="f_dob" value="" readonly tabindex="-1" placeholder="শীঘ্রই">
+          </div>
+          <div class="form-group">
+            <label class="form-label">লিঙ্গ</label>
+            <input class="form-input" id="f_gender" value="" readonly tabindex="-1" placeholder="শীঘ্রই">
+          </div>
+          <div class="form-group full">
+            <label class="form-label">বর্তমান ঠিকানা (অর্ডার থেকে)</label>
+            <input class="form-input" id="f_addr" value="" readonly tabindex="-1">
+          </div>
+        </div>
+        <div class="profile-actions" id="profileBtns">
+          <button type="button" class="form-save-btn" id="btnSaveProfile">💾 সেভ করুন</button>
+          <button type="button" class="profile-cancel-btn" id="btnCancelProfile">↩️ পুনরায় লোড</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ════════ NOTIFICATIONS PAGE ════════ -->
+  <div class="content page" id="page-notifications">
+    <div class="card">
+      <div class="card-header">
+        <div class="card-title">🔔 সকল নোটিফিকেশন</div>
+        <button class="card-btn" onclick="markAllRead()" style="background:var(--bg);border:1px solid var(--border);border-radius:6px;padding:5px 12px;font-size:12px;color:var(--muted2);cursor:pointer;font-family:inherit;">সব পড়া হিসেবে মার্ক করুন</button>
+      </div>
+      <div class="card-body" style="padding-top:4px;" id="fullNotifList"></div>
+    </div>
+  </div>
+
+  <!-- ════════ REWARDS PAGE ════════ -->
+  <div class="content page" id="page-rewards">
+    <div class="grid-1-1">
+      <div class="reward-card" style="border-radius:var(--r);box-shadow:var(--shadow-md)">
+        <div class="reward-label">💎 মোট অর্জিত পয়েন্ট</div>
+        <div class="reward-points" id="rewardsPagePoints">0</div>
+        <div class="reward-sub" id="rewardsPageSub">—</div>
+        <div class="reward-progress-bg"><div class="reward-progress-fill" id="rewardsPageFill"></div></div>
+        <div class="reward-progress-label"><span id="rewardsPagePtsLabel">0 / ৩,০০০</span><span id="rewardsPageGoalLabel">—</span></div>
+        <div class="reward-actions">
+          <button class="reward-btn">🎁 পয়েন্ট রিডিম করুন</button>
+          <button class="reward-btn">🛍️ শপিংয়ে ব্যবহার করুন</button>
+        </div>
+      </div>
+      <div class="card">
+        <div class="card-header"><div class="card-title">📊 পয়েন্ট ইতিহাস</div></div>
+        <div class="card-body" style="padding-top:4px;">
+          <div id="rewardHistory"></div>
+        </div>
+      </div>
+    </div>
+    <div class="card">
+      <div class="card-header"><div class="card-title">🎁 পয়েন্ট দিয়ে কিনুন</div></div>
+      <div class="card-body">
+        <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(160px,1fr));gap:14px;" id="rewardItems"></div>
+      </div>
+    </div>
+  </div>
+
+</div><!-- end main -->
+</div><!-- end layout -->
+</div><!-- end dashboard-shell -->
+</div><!-- end account-dashboard -->
+
+<%- include('../partials/site-footer') %>
+<%- include('../partials/cart-modals') %>
+
+<div class="toast-area" id="toastArea"></div>
+<script src="/js/app.js"></script>
+<script src="/js/user-dashboard.js?v=9"></script>
+</body>
+</html>

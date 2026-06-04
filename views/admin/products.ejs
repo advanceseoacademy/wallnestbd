@@ -1,0 +1,45 @@
+<%- include('partials/head', { title: 'পণ্য' }) %>
+<%- include('partials/sidebar', { page: 'products', admin }) %>
+<div class="main">
+  <div class="topbar">
+    <div><div class="page-title">পণ্য ম্যানেজমেন্ট</div><div class="page-subtitle">ইসলামিক · ফ্যামিলি · কিডস · অফিস · অ্যাবস্ট্র্যাক্ট</div></div>
+    <div class="topbar-right"><button class="card-btn active" type="button" id="btnAddProduct">+ নতুন পণ্য</button></div>
+  </div>
+  <div class="content">
+    <div class="card">
+      <div class="table-wrap">
+        <table>
+          <thead><tr><th>ইমেজ</th><th>নাম</th><th>ক্যাটাগরি</th><th>দাম</th><th>স্টক</th><th>ফিচার্ড</th><th>অ্যাকশন</th></tr></thead>
+          <tbody id="productsBody"></tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+</div>
+<div class="modal-overlay" id="productModal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.6);z-index:200;align-items:center;justify-content:center;">
+  <div class="modal" style="background:var(--surface);border:1px solid var(--border);border-radius:14px;max-width:520px;width:95%;max-height:90vh;overflow:auto;padding:24px;">
+    <h3 id="modalTitle" style="font-family:Syne;margin-bottom:16px;">পণ্য</h3>
+    <form id="productForm">
+      <input type="hidden" id="productId">
+      <div class="form-group"><label class="form-label">নাম (EN)</label><input class="form-input" id="nameEn" required></div>
+      <div class="form-group"><label class="form-label">নাম (BN)</label><input class="form-input" id="nameBn"></div>
+      <div class="form-group"><label class="form-label">ক্যাটাগরি</label><select class="form-input" id="categoryId"></select></div>
+      <div class="form-row" style="display:grid;grid-template-columns:1fr 1fr;gap:12px;">
+        <div class="form-group"><label class="form-label">দাম (৳)</label><input class="form-input" type="number" id="price" step="0.01" required></div>
+        <div class="form-group"><label class="form-label">আগের দাম</label><input class="form-input" type="number" id="originalPrice" step="0.01"></div>
+      </div>
+      <div class="form-group"><label class="form-label">স্টক</label><input class="form-input" type="number" id="stock" value="100"></div>
+      <div class="form-group"><label class="form-label">আইকন (emoji)</label><input class="form-input" id="icon" value="📦"></div>
+      <div class="form-group"><label class="form-label">পণ্যের ছবি</label><input type="file" id="imageFile" accept="image/*"><input type="hidden" id="imageUrl"><div id="imagePreview" style="margin-top:8px;"></div></div>
+      <div class="form-group"><label class="form-label">বিবরণ</label><textarea class="form-input" id="description" rows="3"></textarea></div>
+      <label style="display:flex;gap:8px;align-items:center;margin-bottom:12px;"><input type="checkbox" id="isFeatured" checked> ফিচার্ড</label>
+      <label style="display:flex;gap:8px;align-items:center;margin-bottom:16px;"><input type="checkbox" id="isFlash"> ফ্ল্যাশ সেল</label>
+      <button class="btn-block" type="submit">সেভ করুন</button>
+      <button type="button" class="card-btn" style="width:100%;margin-top:8px;" onclick="closeProductModal()">বাতিল</button>
+    </form>
+  </div>
+</div>
+<style>.form-group{margin-bottom:14px}.form-label{display:block;font-size:13px;margin-bottom:6px;color:var(--muted2)}.form-input{width:100%;padding:10px;background:var(--surface2);border:1px solid var(--border);border-radius:8px;color:var(--text);font-family:inherit}</style>
+<script src="/js/admin-common.js"></script>
+<script src="/js/admin-products.js"></script>
+</body></html>

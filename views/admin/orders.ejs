@@ -1,0 +1,19 @@
+<%- include('partials/head', { title: 'অর্ডার' }) %>
+<%- include('partials/sidebar', { page: 'orders', admin }) %>
+<div class="main">
+  <div class="topbar"><div><div class="page-title">অর্ডার ম্যানেজমেন্ট</div><div class="page-subtitle">ম্যানুয়াল পেমেন্ট যাচাই</div></div></div>
+  <div class="content">
+    <div class="card">
+      <div class="card-header"><div class="card-title">সব অর্ডার</div></div>
+      <div class="table-wrap">
+        <table>
+          <thead><tr><th>অর্ডার</th><th>কাস্টমার</th><th>পেমেন্ট</th><th>Trx ID</th><th>স্ট্যাটাস</th><th>মোট</th><th>অ্যাকশন</th></tr></thead>
+          <tbody id="ordersFullBody"></tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+</div>
+<script src="/js/admin-common.js"></script>
+<script src="/js/admin-orders.js"></script>
+</body></html>

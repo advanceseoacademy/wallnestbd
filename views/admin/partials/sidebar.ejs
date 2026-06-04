@@ -1,0 +1,27 @@
+<aside class="sidebar" id="sidebar">
+  <div class="sidebar-brand">
+    <a href="/admin/dashboard" class="sidebar-brand-link">
+      <img src="/images/wallnestbd-logo.png?v=4" alt="WallNest BD" class="brand-logo-img" width="240" height="58">
+    </a>
+    <small class="sidebar-brand-sub">Admin Panel</small>
+  </div>
+  <div class="sidebar-section">
+    <div class="sidebar-label">মেইন মেনু</div>
+    <a href="/admin/dashboard" class="nav-item <%= page === 'dashboard' ? 'active' : '' %>"><span class="nav-icon">📊</span> ড্যাশবোর্ড</a>
+    <a href="/admin/orders" class="nav-item <%= page === 'orders' ? 'active' : '' %>"><span class="nav-icon">📦</span> অর্ডার <span class="nav-badge" id="navPendingOrders" style="display:none">0</span></a>
+    <a href="/admin/products" class="nav-item <%= page === 'products' ? 'active' : '' %>"><span class="nav-icon">🛍️</span> পণ্য</a>
+    <a href="/admin/payments" class="nav-item <%= page === 'payments' ? 'active' : '' %>"><span class="nav-icon">💰</span> পেমেন্ট</a>
+  </div>
+  <div class="sidebar-section">
+    <a href="/" target="_blank" class="nav-item"><span class="nav-icon">🌐</span> স্টোরফ্রন্ট</a>
+  </div>
+  <div class="sidebar-footer">
+    <div class="user-card">
+      <div class="user-avatar">WN</div>
+      <div class="user-info"><strong>Admin</strong><span><%= admin?.username || '' %></span></div>
+    </div>
+    <form action="/api/admin/logout" method="post" style="margin-top:10px;">
+      <button type="submit" class="card-btn" style="width:100%;">লগআউট</button>
+    </form>
+  </div>
+</aside>

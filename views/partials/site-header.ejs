@@ -1,0 +1,40 @@
+<div class="topbar">
+  <div class="topbar-inner site-wrap">
+    <span>🇧🇩 বাংলাদেশে ডেলিভারি | ৳1500+ অর্ডারে ফ্রি শিপিং</span>
+    <span>📞 সাপোর্ট: <a href="#">01XXXXXXXXX</a></span>
+  </div>
+</div>
+
+<header>
+  <div class="header-inner site-wrap">
+    <a href="/" class="logo">
+      <img src="/images/wallnestbd-logo.png?v=4" alt="WallNest BD — Beautiful Walls, Better Living" class="logo-img" width="250" height="54" fetchpriority="high" decoding="async">
+    </a>
+    <div class="search-bar">
+      <input type="text" placeholder="পণ্য খুঁজুন..." id="searchInput" value="<%= typeof searchQuery !== 'undefined' ? searchQuery : '' %>">
+      <button type="button" onclick="typeof handleSearch === 'function' ? handleSearch() : (window.location.href='/?q='+encodeURIComponent(document.getElementById('searchInput').value))">🔍</button>
+    </div>
+    <div class="header-actions">
+      <% if (user) { %>
+        <a href="/account" class="header-btn<%= activeNav === 'account' ? ' account-active' : '' %>">👤 <span>আমার অ্যাকাউন্ট</span></a>
+        <button class="header-btn" type="button" onclick="logout()">লগআউট</button>
+      <% } else { %>
+        <a href="#" class="header-btn" onclick="openModal('loginModal'); return false;">👤 <span>লগইন</span></a>
+      <% } %>
+      <button class="header-btn" type="button" onclick="toggleCart()">
+        🛒 <span>কার্ট</span>
+        <span class="cart-count" id="cartCount"><%= cartCount || 0 %></span>
+      </button>
+    </div>
+  </div>
+</header>
+
+<nav>
+  <div class="nav-inner site-wrap">
+    <a href="/" class="<%= activeNav === 'home' ? 'active' : '' %>">🏠 হোম</a>
+    <% (categories || []).filter(c => c.slug !== 'all').slice(0, 7).forEach(function(c) { %>
+      <a href="/?category=<%= c.slug %>" class="<%= activeNav === c.slug ? 'active' : '' %>"><%= c.icon %> <%= c.name_bn || c.name_en %></a>
+    <% }); %>
+    <a href="/#products" style="color: #DC2626; font-weight:700;">🔥 ডিল</a>
+  </div>
+</nav>
