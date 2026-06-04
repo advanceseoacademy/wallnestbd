@@ -19,9 +19,6 @@ export default function App({ Component, pageProps }) {
 
   return (
     <>
-      <Head>
-        <link rel="stylesheet" href="/css/route-progress.css" />
-      </Head>
       <FastNav />
       {isAdmin ? (
         <Head>
