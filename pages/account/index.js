@@ -16,6 +16,10 @@ export async function getServerSideProps({ req, res }) {
       return { redirect: { destination: data.redirect, permanent: false } };
     }
     const rendered = await renderPageForNext('account/dashboard', data);
+    res.setHeader(
+      'Cache-Control',
+      'private, max-age=0, stale-while-revalidate=15'
+    );
     return { props: rendered };
   } catch (err) {
     console.error(err);

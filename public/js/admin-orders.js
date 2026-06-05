@@ -17,6 +17,7 @@ async function rejectPayment(id) {
 async function load() {
   const { orders } = await adminApi('/orders');
   const tbody = document.getElementById('ordersFullBody');
+  if (!tbody) return;
   tbody.innerHTML = (orders || [])
     .map((o) => {
       const item = o.firstProduct;
@@ -36,4 +37,10 @@ async function load() {
     .join('');
 }
 
-load().catch(console.error);
+window.verifyPayment = verifyPayment;
+window.rejectPayment = rejectPayment;
+
+runAdminPageInit(() => {
+  if (!document.getElementById('ordersFullBody')) return;
+  return load();
+});

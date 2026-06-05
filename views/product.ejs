@@ -4,10 +4,13 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <%- include('partials/favicon') %>
+<%- include('partials/seo-meta', { seo: typeof seo !== 'undefined' ? seo : null, siteUrl: typeof siteUrl !== 'undefined' ? siteUrl : '' }) %>
+<% if (typeof seo === 'undefined' || !seo) { %>
 <title><%= product.name %> — WallNest BD</title>
 <meta name="description" content="<%= product.name %> — <%= product.desc ? product.desc.slice(0, 120) : 'WallNest BD' %>">
+<% } %>
 <link href="https://fonts.googleapis.com/css2?family=Hind+Siliguri:wght@300;400;500;600;700&family=DM+Sans:wght@300;400;500;600;700&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="/css/style.css">
+<link rel="stylesheet" href="/css/style.css?v=52">
 </head>
 <body>
 
@@ -17,10 +20,11 @@
   <div class="product-page-inner site-wrap">
     <nav class="breadcrumb">
       <a href="/">হোম</a> /
-      <a href="/?category=<%= product.catSlug %>"><%= product.cat %></a> /
+      <a href="/category/<%= product.catSlug %>"><%= product.cat %></a> /
       <span><%= product.name %></span>
     </nav>
 
+    <% const galleryImages = (product.images && product.images.length) ? product.images : (product.imageUrl ? [product.imageUrl] : []); %>
     <div class="product-detail">
       <div class="product-gallery-col">
         <div class="product-gallery">
@@ -30,12 +34,21 @@
             </span>
           <% } %>
           <div class="product-gallery-main" id="mainImage">
-            <% if (product.imageUrl) { %>
-              <img src="<%= product.imageUrl %>" alt="<%= product.name %>" id="galleryImg">
+            <% if (galleryImages.length) { %>
+              <img src="<%= galleryImages[0] %>" alt="<%= product.name %>" id="galleryImg">
             <% } else { %>
               <span class="product-gallery-emoji"><%= product.icon %></span>
             <% } %>
           </div>
+          <% if (galleryImages.length > 1) { %>
+            <div class="product-gallery-thumbs" id="galleryThumbs">
+              <% galleryImages.forEach(function(url, i) { %>
+                <button type="button" class="gallery-thumb <%= i === 0 ? 'active' : '' %>" data-src="<%= url %>" aria-label="ছবি <%= i + 1 %>">
+                  <img src="<%= url %>" alt="<%= product.name %> — ছবি <%= i + 1 %>">
+                </button>
+              <% }); %>
+            </div>
+          <% } %>
         </div>
         <div class="product-mini-perks">
           <div class="mini-perk"><span>🚚</span><div><strong>ফ্রি ডেলিভারি</strong><small>৳1500+ অর্ডারে</small></div></div>
@@ -55,13 +68,31 @@
           <a href="#reviews" class="rating-link">রিভিউ দেখুন ↓</a>
         </div>
 
-        <div class="product-price product-price-lg">
-          <span class="price-current">৳<%= product.price.toLocaleString('bn-BD') %></span>
-          <% if (product.original > product.price) { %>
-            <span class="price-original">৳<%= product.original.toLocaleString('bn-BD') %></span>
-            <span class="price-save">সেভ ৳<%= (product.original - product.price).toLocaleString('bn-BD') %> (<%= Math.round((1 - product.price / product.original) * 100) %>% ছাড়)</span>
-          <% } %>
+        <div class="product-price product-price-lg" id="productPriceBlock">
+          <% if (product.fromPrice) { %><span class="price-from-label">শুরু</span><% } %>
+          <span class="price-current" id="productPriceCurrent">৳<%= product.price.toLocaleString('bn-BD') %></span>
+          <span class="price-original" id="productPriceOriginal" <%= product.original > product.price ? '' : 'style="display:none"' %>>৳<%= product.original.toLocaleString('bn-BD') %></span>
+          <span class="price-save" id="productPriceSave" <%= product.original > product.price ? '' : 'style="display:none"' %>>সেভ ৳<%= (product.original - product.price).toLocaleString('bn-BD') %> (<%= Math.round((1 - product.price / product.original) * 100) %>% ছাড়)</span>
         </div>
+
+        <% if (product.sizes && product.sizes.length) { %>
+        <div class="product-size-row">
+          <span class="size-label">সাইজ নির্বাচন করুন:</span>
+          <div class="product-size-options" id="productSizeOptions">
+            <% product.sizes.forEach(function(s, i) { %>
+              <button type="button"
+                class="size-option <%= i === 0 ? 'active' : '' %>"
+                data-label="<%= s.label %>"
+                data-price="<%= s.price %>"
+                data-original="<%= s.original %>"
+                data-stock="<%= s.stock %>"
+                <%= s.stock <= 0 ? 'disabled' : '' %>>
+                <%= s.label %>
+              </button>
+            <% }); %>
+          </div>
+        </div>
+        <% } %>
 
         <div class="product-meta-row">
           <span>SKU: <strong>WN-<%= product.id %></strong></span>
@@ -70,8 +101,8 @@
 
         <p class="product-desc-short"><%= product.desc || '' %></p>
 
-        <div class="product-stock <%= product.stock > 0 ? 'in-stock' : 'out-stock' %>">
-          <%= product.stock > 0 ? `✅ স্টকে আছে — ${product.stock} পিস বাকি` : '❌ স্টক শেষ — শীঘ্রই আসছে' %>
+        <div class="product-stock <%= product.stock > 0 ? 'in-stock' : 'out-stock' %>" id="productStockLine">
+          <%= product.stock > 0 ? `✅ স্টকে আছে — ${(product.sizes && product.sizes[0]) ? product.sizes[0].stock : product.stock} পিস বাকি` : '❌ স্টক শেষ — শীঘ্রই আসছে' %>
         </div>
 
         <div class="qty-row">
@@ -84,14 +115,20 @@
         </div>
 
         <div class="product-actions">
-          <button type="button" class="btn-add-cart btn-lg" onclick="addToCartWithQty(<%= product.id %>)" <%= product.stock <= 0 ? 'disabled' : '' %>>🛒 কার্টে যোগ করুন</button>
-          <button type="button" class="btn-buy-now btn-lg" onclick="buyNowWithQty(<%= product.id %>)" <%= product.stock <= 0 ? 'disabled' : '' %>>⚡ এখনই কিনুন</button>
+          <button type="button" class="btn-add-cart btn-lg" onclick="addToCartWithQty(<%= JSON.stringify(product.id) %>)" <%= product.stock <= 0 ? 'disabled' : '' %>>🛒 কার্টে যোগ করুন</button>
+          <button type="button" class="btn-buy-now btn-lg" onclick="buyNowWithQty(<%= JSON.stringify(product.id) %>)" <%= product.stock <= 0 ? 'disabled' : '' %>>⚡ এখনই কিনুন</button>
         </div>
 
         <div class="share-row">
-          <span>শেয়ার:</span>
-          <button type="button" class="share-btn" onclick="shareWhatsApp()">WhatsApp</button>
-          <button type="button" class="share-btn" onclick="copyProductLink()">লিংক কপি</button>
+          <span class="share-label">শেয়ার করুন</span>
+          <div class="share-buttons">
+            <button type="button" class="share-btn share-whatsapp" onclick="shareWhatsApp()" title="WhatsApp">WhatsApp</button>
+            <button type="button" class="share-btn share-facebook" onclick="shareFacebook()" title="Facebook">Facebook</button>
+            <button type="button" class="share-btn share-messenger" onclick="shareMessenger()" title="Messenger">Messenger</button>
+            <button type="button" class="share-btn share-telegram" onclick="shareTelegram()" title="Telegram">Telegram</button>
+            <button type="button" class="share-btn share-twitter" onclick="shareTwitter()" title="X (Twitter)">X</button>
+            <button type="button" class="share-btn share-copy" onclick="copyProductLink()" title="লিংক কপি">লিংক কপি</button>
+          </div>
         </div>
       </div>
     </div>
@@ -159,7 +196,7 @@
     <section class="product-section">
       <div class="section-header">
         <h2 class="section-title">🔗 সম্পর্কিত পণ্য — <%= product.cat %></h2>
-        <a href="/?category=<%= product.catSlug %>" class="see-all">সব দেখুন →</a>
+        <a href="/category/<%= product.catSlug %>" class="see-all">সব দেখুন →</a>
       </div>
       <div class="product-grid">
         <% related.forEach(function(p) { %>
@@ -196,14 +233,20 @@
 <script>
   window.__PRODUCT_PAGE__ = <%- JSON.stringify({
     id: product.id,
+    slug: product.slug,
     name: product.name,
     icon: product.icon,
     imageUrl: product.imageUrl,
+    images: product.images || [],
+    sizes: product.sizes || [],
+    fromPrice: product.fromPrice,
     price: product.price,
+    original: product.original,
+    stock: product.stock,
     catSlug: product.catSlug
-  }) %>;
+  }).replace(/</g, '\\u003c') %>;
+  if (window.initProductPage) window.initProductPage();
 </script>
-<script src="/js/app.js"></script>
-<script src="/js/product-page.js"></script>
+<script src="/js/product-page.js?v=3"></script>
 </body>
 </html>

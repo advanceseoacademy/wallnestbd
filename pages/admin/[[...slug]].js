@@ -1,17 +1,32 @@
 import { getSessionFromPair } from '../../lib/session';
-import { renderPageForNext } from '../../lib/renderView';
+import { renderAdminPageForNext, renderPageForNext } from '../../lib/renderView';
+import AdminShell from '../../components/AdminShell';
 
 const VIEW_MAP = {
   login: 'admin/login',
   dashboard: 'admin/dashboard',
   orders: 'admin/orders',
   products: 'admin/products',
+  categories: 'admin/categories',
   payments: 'admin/payments',
+  settings: 'admin/settings',
 };
 
-export default function AdminPage({ bodyHtml }) {
+export default function AdminPage(props) {
+  if (props.isLogin) {
+    return (
+      <div className="admin-login-page">
+        <div suppressHydrationWarning dangerouslySetInnerHTML={{ __html: props.bodyHtml }} />
+      </div>
+    );
+  }
   return (
-    <div suppressHydrationWarning dangerouslySetInnerHTML={{ __html: bodyHtml }} />
+    <AdminShell
+      sidebarHtml={props.sidebarHtml}
+      mainHtml={props.mainHtml}
+      scriptSrcs={props.scriptSrcs}
+      page={props.page}
+    />
   );
 }
 
@@ -37,11 +52,23 @@ export async function getServerSideProps({ req, res, params, query }) {
     return { redirect: { destination: '/admin/dashboard', permanent: false } };
   }
 
-  const rendered = await renderPageForNext(viewKey, {
-    page: page === 'login' ? undefined : page,
+  if (page === 'login') {
+    const rendered = await renderPageForNext('admin/login', {
+      error: query.error ? 'ভুল ইউজারনেম বা পাসওয়ার্ড' : null,
+    });
+    return { props: { ...rendered, isLogin: true } };
+  }
+
+  const rendered = await renderAdminPageForNext(viewKey, {
+    page,
     admin: session.admin,
-    error: query.error ? 'ভুল ইউজারনেম বা পাসওয়ার্ড' : null,
   });
 
-  return { props: rendered };
+  return {
+    props: {
+      ...rendered,
+      page,
+      isLogin: false,
+    },
+  };
 }

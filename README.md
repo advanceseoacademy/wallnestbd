@@ -8,10 +8,13 @@ Bangladesh-focused online store with **manual bKash / Rocket / Nagad** payments,
 
 | Layer | Tech |
 |-------|------|
-| Framework | **Next.js 15** (Pages + App Router API) |
+| Storefront | **Next.js 15** (Pages + EJS) |
+| Admin API | **NestJS** (`admin-api/`, port 3002) |
 | Database | **Supabase** |
-| Views | EJS templates (server-rendered) |
+| Admin UI | EJS templates (Next.js SSR) |
 | Session | `iron-session` (cart + login + admin) |
+
+`npm run dev` runs **Next.js (3000)** + **NestJS admin API (3002)** together.
 
 Legacy Express server: `npm run dev:express` (port 3001)
 
@@ -26,7 +29,8 @@ cp .env.example .env
 npm run setup:db    # first time only
 npm run migrate
 npm run seed
-npm run dev         # http://localhost:3000
+npm install && npm install --prefix admin-api
+npm run dev         # Next :3000 + Nest admin API :3002
 ```
 
 | URL | Purpose |
@@ -62,18 +66,49 @@ Copy `.env.example` → `.env`:
 
 Note: Product image uploads use `public/uploads/` on disk — on Vercel use Supabase Storage or a VPS for uploads.
 
-## Deploy on VPS (recommended for uploads)
+## Deploy on VPS (CyberPanel + wallnestbd.com)
+
+Repo: **https://github.com/advanceseoacademy/wallnestbd**
+
+### 1) CyberPanel — website
+
+1. **Websites → Create Website** — domain: `wallnestbd.com`, PHP not required.
+2. Delete the default `index.html` (the “CyberPanel Installed” page).
+3. **SSL → Issue SSL** for `wallnestbd.com` (Let’s Encrypt).
+
+### 2) SSH — clone & build
 
 ```bash
-git clone https://github.com/advanceseoacademy/wallnestbd.git
-cd wallnestbd
+cd /home/wallnestbd.com   # or your CyberPanel site path
+git clone https://github.com/advanceseoacademy/wallnestbd.git .
 npm install
-cp .env.example .env && nano .env
-npm run setup:db && npm run migrate && npm run seed
-npm run build
+npm install --prefix admin-api
+cp .env.example .env
+nano .env
 ```
 
-**PM2:**
+Set at minimum:
+
+| Variable | Production example |
+|----------|-------------------|
+| `BASE_URL` | `https://wallnestbd.com` |
+| `SESSION_SECRET` | long random string (32+ chars) |
+| `SUPABASE_URL` | your Supabase URL |
+| `SUPABASE_PUBLISHABLE_KEY` | anon key |
+| `ADMIN_USERNAME` / `ADMIN_PASSWORD` | admin login |
+| `SMTP_*` | Gmail app password (optional) |
+
+First-time database (from your laptop or VPS):
+
+```bash
+npm run setup:db
+npm run migrate
+npm run seed          # optional demo data
+npm run build
+chmod -R 775 public/uploads
+```
+
+### 3) PM2 — keep app running
 
 ```bash
 npm install -g pm2
@@ -82,9 +117,45 @@ pm2 save
 pm2 startup
 ```
 
-**Nginx** (example) — proxy port 3000, serve `public/` static files, SSL via Certbot.
+App listens on **port 3000** (Next.js + Nest admin API).
 
-Ensure `public/uploads/products/` is writable and backed up.
+### 4) CyberPanel — reverse proxy to Node
+
+**Websites → List Websites → wallnestbd.com → Manage → vHost Conf** (or **Rewrite Rules**), proxy to `http://127.0.0.1:3000`:
+
+```apache
+extprocessor node_app {
+  type                    proxy
+  address                 127.0.0.1:3000
+  maxConns                100
+  initTimeout             60
+  retryTimeout            0
+  respBuffer              0
+}
+
+context / {
+  type                    proxy
+  handler                 node_app
+  addDefaultCharset       off
+}
+```
+
+Save and **graceful restart** OpenLiteSpeed from CyberPanel.
+
+Alternative: **Websites → Setup Node.js App** (if available) — app root = site folder, startup file `npm start`, port `3000`.
+
+### 5) Updates after code changes
+
+```bash
+cd /home/wallnestbd.com
+git pull
+npm install
+npm install --prefix admin-api
+npm run build
+pm2 restart wallnestbd
+```
+
+Ensure `public/uploads/` is writable and backed up.
 
 ## Features
 

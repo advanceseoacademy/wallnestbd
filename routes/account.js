@@ -12,7 +12,10 @@ router.get(
   asyncHandler(async (req, res) => {
     const [ctx, account] = await Promise.all([
       getPageContext(req),
-      getAccountData(req.session.user, { sessionId: req.sessionID }),
+      getAccountData(req.session.user, {
+        sessionId: req.sessionID,
+        skipGuestLink: true,
+      }),
     ]);
     const accountJson = JSON.stringify(account).replace(/</g, '\\u003c');
     res.render('account/dashboard', {

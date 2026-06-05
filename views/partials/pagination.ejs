@@ -1,0 +1,23 @@
+<% if (typeof totalPages !== 'undefined' && totalPages > 1) { %>
+<nav class="pagination" aria-label="পেজ নেভিগেশন">
+  <% if (currentPage > 1) { %>
+  <a href="<%= basePath %>?page=<%= currentPage - 1 %>" class="pagination-btn">← আগের</a>
+  <% } else { %>
+  <span class="pagination-btn is-disabled" aria-disabled="true">← আগের</span>
+  <% } %>
+  <div class="pagination-pages">
+    <% for (let p = 1; p <= totalPages; p++) { %>
+    <% if (p === currentPage) { %>
+    <span class="pagination-num is-active" aria-current="page"><%= p %></span>
+    <% } else { %>
+    <a href="<%= basePath %>?page=<%= p %>" class="pagination-num"><%= p %></a>
+    <% } %>
+    <% } %>
+  </div>
+  <% if (currentPage < totalPages) { %>
+  <a href="<%= basePath %>?page=<%= currentPage + 1 %>" class="pagination-btn pagination-btn-next">পরের →</a>
+  <% } else { %>
+  <span class="pagination-btn is-disabled" aria-disabled="true">পরের →</span>
+  <% } %>
+</nav>
+<% } %>

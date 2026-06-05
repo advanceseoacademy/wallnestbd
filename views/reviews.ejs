@@ -1,0 +1,44 @@
+<!DOCTYPE html>
+<html lang="bn">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<%- include('partials/favicon') %>
+<%- include('partials/seo-meta', { seo: typeof seo !== 'undefined' ? seo : null, siteUrl: typeof siteUrl !== 'undefined' ? siteUrl : '' }) %>
+<% if (typeof seo === 'undefined' || !seo) { %><title>গ্রাহকের মতামত — WallNest BD<% if (currentPage > 1) { %> (পেজ <%= currentPage %>)<% } %></title><% } %>
+<link href="https://fonts.googleapis.com/css2?family=Hind+Siliguri:wght@300;400;500;600;700&family=DM+Sans:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="/css/style.css?v=33">
+</head>
+<body>
+
+<%- include('partials/site-header', { categories, cartCount, user, activeNav: 'reviews' }) %>
+
+<div class="site-wrap site-main reviews-page">
+  <nav class="breadcrumb" style="margin-bottom:20px;">
+    <a href="/">হোম</a> / <span>গ্রাহকের মতামত</span>
+  </nav>
+  <div class="section-header">
+    <h1 class="section-title">💬 গ্রাহকের মতামত / <span>Customer Reviews</span></h1>
+    <a href="/" class="see-all">← হোমে ফিরুন</a>
+  </div>
+  <% if (reviews && reviews.length) { %>
+  <div class="review-grid reviews-page-grid">
+    <% const baseIndex = (currentPage - 1) * (perPage || 6); %>
+    <% reviews.forEach(function(r, i) { %>
+      <%- include('partials/review-card', { r: r, i: baseIndex + i }) %>
+    <% }); %>
+  </div>
+  <%- include('partials/pagination', { currentPage: currentPage, totalPages: totalPages, basePath: '/reviews' }) %>
+  <% } else { %>
+  <div class="new-arrivals-empty">
+    <p>এখনো কোনো রিভিউ নেই।</p>
+    <a href="/" class="btn-primary" style="display:inline-block;margin-top:16px;text-decoration:none;">হোমপেজ</a>
+  </div>
+  <% } %>
+</div>
+
+<%- include('partials/site-footer') %>
+<%- include('partials/cart-modals') %>
+<script src="/js/app.js"></script>
+</body>
+</html>

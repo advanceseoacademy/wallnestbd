@@ -8,32 +8,21 @@ const {
   clearCart,
 } = require('../lib/cart');
 const { filterByProductParam } = require('../lib/productQuery');
+const { mergePaymentSettings } = require('../lib/paymentDefaults');
+const { trackOrderByNumber } = require('../lib/orderTracking');
 const { filterStoreCategories } = require('../lib/catalogCategories');
 const { requireUser } = require('../middleware/requireUser');
 const { getAccountData, updateProfile } = require('../lib/accountService');
 const { linkGuestOrders } = require('../lib/orderLinking');
+const { mapProduct } = require('../lib/mapProduct');
+const {
+  queueWelcomeEmail,
+  queueOrderConfirmationEmail,
+} = require('../lib/email/mailer');
+const { renderPageForNext } = require('../lib/renderView');
+const { getAccountPageData } = require('../lib/storeData');
 
 const router = express.Router();
-
-function mapProduct(p) {
-  const cat = p.categories || {};
-  return {
-    id: p.legacy_id || p.id,
-    uuid: p.id,
-    name: p.name_en,
-    nameBn: p.name_bn,
-    cat: cat.name_en || 'General',
-    catSlug: cat.slug,
-    icon: p.icon || '📦',
-    imageUrl: p.image_url || null,
-    price: Number(p.price),
-    original: Number(p.original_price || p.price),
-    rating: Number(p.rating),
-    reviews: p.review_count || 0,
-    badge: p.badge,
-    desc: p.description || '',
-  };
-}
 
 router.get('/products', async (req, res) => {
   try {
@@ -115,8 +104,8 @@ router.get('/cart', async (req, res) => {
 
 router.post('/cart/add', async (req, res) => {
   try {
-    const { productId, quantity = 1 } = req.body;
-    await addToCart(req, productId, quantity);
+    const { productId, quantity = 1, sizeLabel = '' } = req.body;
+    await addToCart(req, productId, quantity, sizeLabel);
     const items = await getCartItems(req);
     res.json({
       ok: true,
@@ -147,9 +136,11 @@ router.delete('/cart/:cartItemId', async (req, res) => {
   try {
     await removeFromCart(req, req.params.cartItemId);
     const items = await getCartItems(req);
+    const subtotal = items.reduce((s, i) => s + i.price * i.qty, 0);
     res.json({
       items,
       count: items.reduce((s, i) => s + i.qty, 0),
+      subtotal,
     });
   } catch (err) {
     res.status(400).json({ error: err.message });
@@ -163,7 +154,21 @@ router.get('/payments', async (_req, res) => {
       .select('value')
       .eq('key', 'payment_methods')
       .maybeSingle();
-    res.json({ payments: data?.value || {} });
+    res.json({ payments: mergePaymentSettings(data?.value || {}) });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+router.get('/orders/track', async (req, res) => {
+  try {
+    const result = await trackOrderByNumber(
+      req.query.orderNumber || req.query.order
+    );
+    if (result.error) {
+      return res.status(404).json({ error: result.error });
+    }
+    res.json(result);
   } catch (err) {
     res.status(500).json({ error: err.message });
   }
@@ -240,8 +245,9 @@ router.post('/orders', async (req, res) => {
     const orderItems = items.map((item) => ({
       order_id: order.id,
       product_id: item.productId,
-      product_name: item.name,
+      product_name: item.displayName || item.name,
       product_icon: item.icon,
+      size_label: item.sizeLabel || null,
       price: item.price,
       quantity: item.qty,
       line_total: item.price * item.qty,
@@ -251,6 +257,8 @@ router.post('/orders', async (req, res) => {
     if (itemsErr) throw itemsErr;
 
     await clearCart(req);
+
+    queueOrderConfirmationEmail(order, orderItems);
 
     res.json({
       ok: true,
@@ -301,9 +309,10 @@ router.post('/auth/register', async (req, res) => {
         first_name: firstName,
         last_name: lastName,
       });
+      queueWelcomeEmail({ email, firstName, lastName });
     }
 
-    res.json({ ok: true, message: 'Check email to confirm account (if enabled)' });
+    res.json({ ok: true, message: 'অ্যাকাউন্ট তৈরি হয়েছে! ইমেইল চেক করুন।' });
   } catch (err) {
     res.status(400).json({ error: err.message });
   }
@@ -348,10 +357,24 @@ router.post('/auth/logout', (req, res) => {
   });
 });
 
+router.get('/account/page', requireUser, async (req, res) => {
+  try {
+    const data = await getAccountPageData(req);
+    if (data.redirect) {
+      return res.status(401).json({ error: 'লগইন প্রয়োজন' });
+    }
+    const rendered = await renderPageForNext('account/dashboard', data);
+    res.json(rendered);
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
 router.get('/account/data', requireUser, async (req, res) => {
   try {
     const data = await getAccountData(req.session.user, {
       sessionId: req.sessionID,
+      skipGuestLink: true,
     });
     res.json(data);
   } catch (err) {

@@ -1,5 +1,6 @@
 node_modules/
 .next/
+admin-api/dist/
 .env
 .DS_Store
 *.log

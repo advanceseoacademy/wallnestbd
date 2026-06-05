@@ -1,0 +1,68 @@
+<!DOCTYPE html>
+<html lang="bn">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<%- include('partials/favicon') %>
+<%- include('partials/seo-meta', { seo: typeof seo !== 'undefined' ? seo : null, siteUrl: typeof siteUrl !== 'undefined' ? siteUrl : '' }) %>
+<% if (typeof seo === 'undefined' || !seo) { %><title>অর্ডার ট্র্যাক — WallNest BD</title><% } %>
+<link href="https://fonts.googleapis.com/css2?family=Hind+Siliguri:wght@300;400;500;600;700&family=DM+Sans:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="/css/style.css?v=44">
+</head>
+<body>
+
+<%- include('partials/site-header', { categories, cartCount, user, activeNav: '' }) %>
+
+<div class="site-wrap site-main track-order-page">
+  <nav class="breadcrumb">
+    <a href="/">হোম</a> / <span>অর্ডার ট্র্যাক</span>
+  </nav>
+
+  <div class="section-header">
+    <h1 class="section-title">📦 অর্ডার ট্র্যাক / <span>Track Order</span></h1>
+    <a href="/" class="see-all track-back-link">← হোমে ফিরুন</a>
+  </div>
+  <p class="track-order-desc">অর্ডার নম্বর দিয়ে ডেলিভারি ও পেমেন্ট স্ট্যাটাস দেখুন।</p>
+
+  <div class="track-order-card">
+    <form id="trackOrderForm" class="track-order-form" autocomplete="off">
+      <div class="form-row">
+        <label for="trackOrderNumber">অর্ডার নম্বর</label>
+        <input type="text" id="trackOrderNumber" name="order" placeholder="যেমন: WN-..." value="<%= typeof prefillOrder !== 'undefined' ? prefillOrder : '' %>" required>
+      </div>
+      <button type="submit" class="btn-primary btn-block" id="trackSubmitBtn">🔍 স্ট্যাটাস দেখুন</button>
+    </form>
+    <div id="trackError" class="track-order-error" hidden></div>
+  </div>
+
+  <div id="trackResult" class="track-result-card" hidden>
+    <div class="track-result-head">
+      <div>
+        <div class="track-result-label">অর্ডার নম্বর</div>
+        <div class="track-result-id" id="resultOrderNumber">—</div>
+      </div>
+      <div class="track-status-pill" id="resultStatusPill">—</div>
+    </div>
+    <div class="track-meta-grid">
+      <div><span>তারিখ</span><strong id="resultDate">—</strong></div>
+      <div><span>পেমেন্ট</span><strong id="resultPayment">—</strong></div>
+      <div><span>মোট</span><strong id="resultTotal">—</strong></div>
+      <div><span>গ্রাহক</span><strong id="resultCustomer">—</strong></div>
+    </div>
+    <div class="track-address" id="resultAddress"></div>
+
+    <div class="track-progress-wrap" id="trackProgressWrap">
+      <div class="track-bar" id="trackingBar"></div>
+    </div>
+
+    <div class="track-items-title">অর্ডার আইটেম</div>
+    <ul class="track-items-list" id="trackItemsList"></ul>
+  </div>
+</div>
+
+<%- include('partials/site-footer') %>
+<%- include('partials/cart-modals') %>
+<script src="/js/app.js"></script>
+<script src="/js/track-order.js?v=2"></script>
+</body>
+</html>

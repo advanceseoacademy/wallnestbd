@@ -1,8 +1,14 @@
 const keys = ['bkash', 'rocket', 'nagad'];
 const labels = { bkash: 'bKash', rocket: 'Rocket', nagad: 'Nagad' };
+const defaultNumbers = {
+  bkash: '01309093407',
+  nagad: '01309093407',
+  rocket: '01757591788',
+};
 
 function renderForm(payments) {
   const form = document.getElementById('paymentsForm');
+  if (!form) return;
   form.innerHTML = keys
     .map((key) => {
       const p = payments[key] || {};
@@ -18,23 +24,30 @@ function renderForm(payments) {
     .join('');
 }
 
-document.getElementById('savePayments').onclick = async () => {
-  const payments = {};
-  keys.forEach((key) => {
-    payments[key] = { label: labels[key], enabled: true, account_type: 'Personal', number: '', instructions: '' };
-    document.querySelectorAll(`[data-key="${key}"]`).forEach((el) => {
-      const field = el.dataset.field;
-      if (field === 'enabled') payments[key].enabled = el.checked;
-      else payments[key][field] = el.value;
-    });
-  });
-  await adminApi('/settings/payments', {
-    method: 'PUT',
-    body: JSON.stringify({ payments }),
-  });
-  alert('পেমেন্ট সেটিংস সেভ হয়েছে!');
-};
+function initPaymentsPage() {
+  const saveBtn = document.getElementById('savePayments');
+  if (!saveBtn) return;
 
-adminApi('/settings/payments')
-  .then((d) => renderForm(d.payments || {}))
-  .catch(console.error);
+  saveBtn.onclick = async () => {
+    const payments = {};
+    keys.forEach((key) => {
+      payments[key] = { label: labels[key], enabled: true, account_type: 'Personal', number: '', instructions: '' };
+      document.querySelectorAll(`[data-key="${key}"]`).forEach((el) => {
+        const field = el.dataset.field;
+        if (field === 'enabled') payments[key].enabled = el.checked;
+        else payments[key][field] = el.value;
+      });
+    });
+    await adminApi('/settings/payments', {
+      method: 'PUT',
+      body: JSON.stringify({ payments }),
+    });
+    alert('পেমেন্ট সেটিংস সেভ হয়েছে!');
+  };
+
+  return adminApi('/settings/payments')
+    .then((d) => renderForm(d.payments || {}))
+    .catch(console.error);
+}
+
+runAdminPageInit(initPaymentsPage);

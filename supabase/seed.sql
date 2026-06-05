@@ -16,8 +16,7 @@ DELETE FROM categories WHERE slug NOT IN (
   'islamic-wall-art',
   'family-photo-canvas',
   'kids-room-art',
-  'office-motivational-art',
-  'abstract-wall-art'
+  'office-motivational-art'
 );
 
 INSERT INTO categories (slug, name_en, name_bn, icon, sort_order, catalog_share) VALUES
@@ -25,8 +24,7 @@ INSERT INTO categories (slug, name_en, name_bn, icon, sort_order, catalog_share)
   ('islamic-wall-art', 'Islamic Wall Art', 'ইসলামিক ওয়াল আর্ট', '🕌', 1, 40),
   ('family-photo-canvas', 'Family Photo Canvas', 'ফ্যামিলি ফটো ক্যানভাস', '🖼️', 2, 25),
   ('kids-room-art', 'Kids Room Art', 'কিডস রুম আর্ট', '🧸', 3, 15),
-  ('office-motivational-art', 'Office Motivational Art', 'অফিস মোটিভেশনাল আর্ট', '💼', 4, 10),
-  ('abstract-wall-art', 'Abstract Wall Art', 'অ্যাবস্ট্র্যাক্ট ওয়াল আর্ট', '🎨', 5, 10)
+  ('office-motivational-art', 'Office Motivational Art', 'অফিস মোটিভেশনাল আর্ট', '💼', 4, 20)
 ON CONFLICT (slug) DO UPDATE SET
   name_en = EXCLUDED.name_en,
   name_bn = EXCLUDED.name_bn,
@@ -110,26 +108,6 @@ INSERT INTO products (legacy_id, category_id, name_en, name_bn, description, ico
 SELECT 18, id, 'Teamwork Goals Office Canvas', 'টিমওয়ার্ক গোলস অফিস ক্যানভাস', 'Corporate gift friendly. Neutral colors for any workspace.', '🎯', 1299, 1699, 4.6, 175, NULL, true, false, 50 FROM categories WHERE slug = 'office-motivational-art'
 ON CONFLICT (legacy_id) DO UPDATE SET name_en = EXCLUDED.name_en, category_id = EXCLUDED.category_id;
 
--- Abstract Wall Art — 10% (2 products)
-INSERT INTO products (legacy_id, category_id, name_en, name_bn, description, icon, price, original_price, rating, review_count, badge, is_featured, is_flash_sale, stock)
-SELECT 19, id, 'Geometric Gold Abstract Triptych', 'জিওমেট্রিক গোল্ড অ্যাবস্ট্র্যাক্ট', 'Modern gold-line art on deep navy. Living room focal piece.', '🎨', 2199, 2899, 4.7, 240, 'sale', true, false, 40 FROM categories WHERE slug = 'abstract-wall-art'
-ON CONFLICT (legacy_id) DO UPDATE SET name_en = EXCLUDED.name_en, category_id = EXCLUDED.category_id;
+DELETE FROM products WHERE legacy_id IN (19, 20);
 
-INSERT INTO products (legacy_id, category_id, name_en, name_bn, description, icon, price, original_price, rating, review_count, badge, is_featured, is_flash_sale, stock)
-SELECT 20, id, 'Fluid Blue Abstract Large Canvas', 'ফ্লুইড ব্লু অ্যাবস্ট্র্যাক্ট লার্জ', 'Oversized 30x40 canvas for sofa backdrop walls.', '🌊', 2799, 3599, 4.8, 165, NULL, true, false, 30 FROM categories WHERE slug = 'abstract-wall-art'
-ON CONFLICT (legacy_id) DO UPDATE SET name_en = EXCLUDED.name_en, category_id = EXCLUDED.category_id;
-
-INSERT INTO reviews (product_id, reviewer_name, rating, comment, is_verified)
-SELECT p.id, 'রাহেলা বেগম', 5, 'আয়াতুল কুরসি ক্যানভাস দেয়ালে দারুণ লাগছে। প্রিন্ট কোয়ালিটি অসাধারণ!', true
-FROM products p WHERE p.legacy_id = 1
-AND NOT EXISTS (SELECT 1 FROM reviews r WHERE r.reviewer_name = 'রাহেলা বেগম' AND r.product_id = p.id);
-
-INSERT INTO reviews (product_id, reviewer_name, rating, comment, is_verified)
-SELECT p.id, 'Karim Ahmed', 5, 'Custom family canvas — photo clarity perfect. Fast delivery.', true
-FROM products p WHERE p.legacy_id = 9
-AND NOT EXISTS (SELECT 1 FROM reviews r WHERE r.reviewer_name = 'Karim Ahmed' AND r.product_id = p.id);
-
-INSERT INTO reviews (product_id, reviewer_name, rating, comment, is_verified)
-SELECT p.id, 'নাফিসা ইসলাম', 4, 'কিডস রুমের ইউনিকর্ন আর্ট বাচ্চার খুব পছন্দ হয়েছে।', true
-FROM products p WHERE p.legacy_id = 14
-AND NOT EXISTS (SELECT 1 FROM reviews r WHERE r.reviewer_name = 'নাফিসা ইসলাম' AND r.product_id = p.id);
+-- Reviews: apply migrations/009_product_reviews.sql after seed (30 product-linked reviews)

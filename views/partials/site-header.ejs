@@ -7,34 +7,97 @@
 
 <header>
   <div class="header-inner site-wrap">
+    <div class="header-cat-menu only-mobile">
+      <button
+        type="button"
+        class="nav-menu-toggle header-menu-btn"
+        id="navMenuToggle"
+        aria-expanded="false"
+        aria-controls="mobileMenuPanel"
+        aria-label="মেনু খুলুন"
+      >
+        <span class="nav-hamburger" aria-hidden="true"><span></span><span></span><span></span></span>
+      </button>
+    </div>
     <a href="/" class="logo">
       <img src="/images/wallnestbd-logo.png?v=4" alt="WallNest BD — Beautiful Walls, Better Living" class="logo-img" width="250" height="54" fetchpriority="high" decoding="async">
     </a>
     <div class="search-bar">
       <input type="text" placeholder="পণ্য খুঁজুন..." id="searchInput" value="<%= typeof searchQuery !== 'undefined' ? searchQuery : '' %>">
-      <button type="button" onclick="typeof handleSearch === 'function' ? handleSearch() : (window.location.href='/?q='+encodeURIComponent(document.getElementById('searchInput').value))">🔍</button>
+      <button type="button" class="search-bar-submit" aria-label="খুঁজুন" onclick="typeof handleSearch === 'function' ? handleSearch() : (window.location.href='/?q='+encodeURIComponent(document.getElementById('searchInput').value))">🔍</button>
     </div>
     <div class="header-actions">
       <% if (user) { %>
-        <a href="/account" class="header-btn<%= activeNav === 'account' ? ' account-active' : '' %>">👤 <span>আমার অ্যাকাউন্ট</span></a>
-        <button class="header-btn" type="button" onclick="logout()">লগআউট</button>
+        <a href="/account" class="header-btn header-icon-btn<%= activeNav === 'account' ? ' account-active' : '' %>" aria-label="আমার অ্যাকাউন্ট">
+          <svg class="header-icon" viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+          <span class="only-desktop">আমার অ্যাকাউন্ট</span>
+        </a>
+        <button class="header-btn only-desktop" type="button" onclick="logout()">লগআউট</button>
       <% } else { %>
-        <a href="#" class="header-btn" onclick="openModal('loginModal'); return false;">👤 <span>লগইন</span></a>
+        <a href="#" class="header-btn header-icon-btn only-mobile" aria-label="লগইন" onclick="openModal('loginModal'); return false;">
+          <svg class="header-icon" viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+        </a>
+        <a href="#" class="header-btn only-desktop" onclick="openModal('loginModal'); return false;">👤 <span>লগইন</span></a>
       <% } %>
-      <button class="header-btn" type="button" onclick="toggleCart()">
-        🛒 <span>কার্ট</span>
+      <button class="header-btn header-icon-btn header-btn-cart" type="button" onclick="toggleCart()" aria-label="কার্ট">
+        <svg class="header-icon" viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><circle cx="9" cy="21" r="1"/><circle cx="20" cy="21" r="1"/><path d="M1 1h4l2.68 13.39a2 2 0 0 0 2 1.61h9.72a2 2 0 0 0 2-1.61L23 6H6"/></svg>
+        <span class="only-desktop">কার্ট</span>
         <span class="cart-count" id="cartCount"><%= cartCount || 0 %></span>
       </button>
     </div>
   </div>
 </header>
 
+<div class="mobile-menu only-mobile" id="mobileMenu" aria-hidden="true">
+  <div class="mobile-menu-overlay" id="mobileMenuOverlay" tabindex="-1" aria-hidden="true"></div>
+  <aside class="mobile-menu-panel" id="mobileMenuPanel" role="dialog" aria-modal="true" aria-label="ক্যাটাগরি মেনু">
+    <div class="mobile-menu-head">
+      <a href="/" class="mobile-menu-logo">
+        <img src="/images/wallnestbd-logo.png?v=4" alt="WallNest BD" width="180" height="40" decoding="async">
+      </a>
+      <button type="button" class="mobile-menu-close" id="navMenuClose" aria-label="মেনু বন্ধ করুন">×</button>
+    </div>
+    <div class="mobile-menu-support">
+      <span class="mobile-menu-support-icon" aria-hidden="true">📞</span>
+      <div class="mobile-menu-support-text">
+        <span class="mobile-menu-support-label">সাপোর্ট</span>
+        <a href="tel:01XXXXXXXXX" class="mobile-menu-support-phone">01XXXXXXXXX</a>
+      </div>
+    </div>
+    <nav class="mobile-menu-nav" id="mobileMenuNav">
+      <a href="/" class="mobile-menu-item<%= activeNav === 'home' ? ' is-active' : '' %>" data-cat="all">🏠 হোম</a>
+      <div class="mobile-menu-categories" id="mobileMenuCategories">
+        <% (categories || []).filter(function(c) { return c.slug && c.slug !== 'all'; }).sort(function(a, b) { return (a.sort_order || 0) - (b.sort_order || 0); }).forEach(function(c) { %>
+        <a
+          href="/category/<%= encodeURIComponent(c.slug) %>"
+          class="mobile-menu-item<%= activeNav === c.slug ? ' is-active' : '' %>"
+          data-cat="<%= c.slug %>"
+        ><span class="mobile-menu-item-label"><%= c.icon %> <%= c.name_bn || c.name_en %></span></a>
+        <% }); %>
+      </div>
+      <a href="/new-arrivals" class="mobile-menu-item<%= activeNav === 'new-arrivals' ? ' is-active' : '' %>">🆕 নতুন আরাইভাল</a>
+      <a href="/reviews" class="mobile-menu-item<%= activeNav === 'reviews' ? ' is-active' : '' %>">💬 রিভিউ</a>
+      <a href="/#category-sections" class="mobile-menu-item">🔥 ডিল</a>
+    </nav>
+  </aside>
+</div>
+
 <nav>
   <div class="nav-inner site-wrap">
-    <a href="/" class="<%= activeNav === 'home' ? 'active' : '' %>">🏠 হোম</a>
-    <% (categories || []).filter(c => c.slug !== 'all').slice(0, 7).forEach(function(c) { %>
-      <a href="/?category=<%= c.slug %>" class="<%= activeNav === c.slug ? 'active' : '' %>"><%= c.icon %> <%= c.name_bn || c.name_en %></a>
-    <% }); %>
-    <a href="/#products" style="color: #DC2626; font-weight:700;">🔥 ডিল</a>
+    <!-- Desktop: horizontal category links -->
+    <div class="nav-desktop only-desktop">
+      <a href="/" class="nav-link<%= activeNav === 'home' ? ' active' : '' %>">🏠 হোম</a>
+      <% (categories || []).filter(function(c) { return c.slug && c.slug !== 'all'; }).forEach(function(c) { %>
+      <a href="/category/<%= encodeURIComponent(c.slug) %>" class="nav-link<%= activeNav === c.slug ? ' active' : '' %>" data-cat="<%= c.slug %>"><%= c.icon %> <%= c.name_bn || c.name_en %></a>
+      <% }); %>
+      <a href="/new-arrivals" class="nav-link<%= activeNav === 'new-arrivals' ? ' active' : '' %>">🆕 নতুন আরাইভাল</a>
+      <a href="/#category-sections" class="nav-link nav-deals">🔥 ডিল</a>
+    </div>
+
+    <!-- Mobile: হোম + ডিল -->
+    <div class="nav-mobile only-mobile">
+      <a href="/" class="nav-link<%= activeNav === 'home' ? ' active' : '' %>">🏠 হোম</a>
+      <a href="/#category-sections" class="nav-link nav-deals">🔥 ডিল</a>
+    </div>
   </div>
 </nav>

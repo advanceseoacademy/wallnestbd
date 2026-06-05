@@ -10,18 +10,22 @@ CREATE TABLE IF NOT EXISTS categories (
   icon TEXT DEFAULT '📦',
   sort_order INT DEFAULT 0,
   catalog_share INT DEFAULT NULL,
+  hero_image_url TEXT,
   created_at TIMESTAMPTZ DEFAULT NOW()
 );
 
 CREATE TABLE IF NOT EXISTS products (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
   legacy_id INT UNIQUE,
+  slug TEXT UNIQUE,
   category_id UUID REFERENCES categories(id) ON DELETE SET NULL,
   name_en TEXT NOT NULL,
   name_bn TEXT,
   description TEXT,
   icon TEXT DEFAULT '📦',
   image_url TEXT,
+  images JSONB DEFAULT '[]'::jsonb,
+  sizes JSONB DEFAULT '[]'::jsonb,
   price NUMERIC(10,2) NOT NULL,
   original_price NUMERIC(10,2),
   rating NUMERIC(2,1) DEFAULT 4.5,
@@ -47,17 +51,20 @@ CREATE TABLE IF NOT EXISTS cart_items (
   user_id UUID REFERENCES auth.users(id) ON DELETE CASCADE,
   session_id TEXT,
   product_id UUID NOT NULL REFERENCES products(id) ON DELETE CASCADE,
+  size_label TEXT NOT NULL DEFAULT '',
+  unit_price NUMERIC(10,2),
+  unit_original_price NUMERIC(10,2),
   quantity INT NOT NULL DEFAULT 1 CHECK (quantity > 0),
   created_at TIMESTAMPTZ DEFAULT NOW(),
   updated_at TIMESTAMPTZ DEFAULT NOW(),
   CONSTRAINT cart_owner_check CHECK (user_id IS NOT NULL OR session_id IS NOT NULL)
 );
 
-CREATE UNIQUE INDEX IF NOT EXISTS cart_items_user_product_idx
-  ON cart_items (user_id, product_id) WHERE user_id IS NOT NULL;
+CREATE UNIQUE INDEX IF NOT EXISTS cart_items_user_product_size_idx
+  ON cart_items (user_id, product_id, size_label) WHERE user_id IS NOT NULL;
 
-CREATE UNIQUE INDEX IF NOT EXISTS cart_items_session_product_idx
-  ON cart_items (session_id, product_id) WHERE session_id IS NOT NULL;
+CREATE UNIQUE INDEX IF NOT EXISTS cart_items_session_product_size_idx
+  ON cart_items (session_id, product_id, size_label) WHERE session_id IS NOT NULL;
 
 CREATE TABLE IF NOT EXISTS orders (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
@@ -84,6 +91,7 @@ CREATE TABLE IF NOT EXISTS order_items (
   product_id UUID REFERENCES products(id) ON DELETE SET NULL,
   product_name TEXT NOT NULL,
   product_icon TEXT,
+  size_label TEXT,
   price NUMERIC(10,2) NOT NULL,
   quantity INT NOT NULL DEFAULT 1,
   line_total NUMERIC(10,2) NOT NULL

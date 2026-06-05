@@ -7,12 +7,15 @@
   </div>
   <div class="sidebar-section">
     <div class="sidebar-label">মেইন মেনু</div>
-    <a href="/admin/dashboard" class="nav-item <%= page === 'dashboard' ? 'active' : '' %>"><span class="nav-icon">📊</span> ড্যাশবোর্ড</a>
-    <a href="/admin/orders" class="nav-item <%= page === 'orders' ? 'active' : '' %>"><span class="nav-icon">📦</span> অর্ডার <span class="nav-badge" id="navPendingOrders" style="display:none">0</span></a>
-    <a href="/admin/products" class="nav-item <%= page === 'products' ? 'active' : '' %>"><span class="nav-icon">🛍️</span> পণ্য</a>
-    <a href="/admin/payments" class="nav-item <%= page === 'payments' ? 'active' : '' %>"><span class="nav-icon">💰</span> পেমেন্ট</a>
+    <a href="/admin/dashboard" class="nav-item <%= page === 'dashboard' ? 'active' : '' %>" data-page="dashboard"><span class="nav-icon">📊</span> ড্যাশবোর্ড</a>
+    <a href="/admin/orders" class="nav-item <%= page === 'orders' ? 'active' : '' %>" data-page="orders"><span class="nav-icon">📦</span> অর্ডার <span class="nav-badge" id="navPendingOrders" style="display:none">0</span></a>
+    <a href="/admin/products" class="nav-item <%= page === 'products' ? 'active' : '' %>" data-page="products"><span class="nav-icon">🛍️</span> পণ্য</a>
+    <a href="/admin/categories" class="nav-item <%= page === 'categories' ? 'active' : '' %>" data-page="categories"><span class="nav-icon">📁</span> ক্যাটাগরি</a>
+    <a href="/admin/payments" class="nav-item <%= page === 'payments' ? 'active' : '' %>" data-page="payments"><span class="nav-icon">💰</span> পেমেন্ট</a>
   </div>
   <div class="sidebar-section">
+    <div class="sidebar-label">সেটিংস</div>
+    <a href="/admin/settings" class="nav-item <%= page === 'settings' ? 'active' : '' %>" data-page="settings"><span class="nav-icon">⚙️</span> সেটিংস</a>
     <a href="/" target="_blank" class="nav-item"><span class="nav-icon">🌐</span> স্টোরফ্রন্ট</a>
   </div>
   <div class="sidebar-footer">

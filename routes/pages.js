@@ -1,55 +1,96 @@
 const express = require('express');
-const { supabase } = require('../lib/supabase');
-const { mapProduct } = require('../lib/mapProduct');
-const { filterByProductParam } = require('../lib/productQuery');
 const { asyncHandler } = require('../lib/asyncHandler');
-const { getPageContext } = require('../lib/pageContext');
+const {
+  getHomeData,
+  getProductData,
+  getReviewsPageData,
+  getNewArrivalsPageData,
+  getTrackOrderPageData,
+} = require('../lib/storeData');
+const {
+  getSiteUrl,
+  seoForHome,
+  seoForCategory,
+  seoForProduct,
+  seoForReviews,
+  seoForNewArrivals,
+  seoForTrackOrder,
+} = require('../lib/seo');
+const { isCatalogCategory } = require('../lib/catalogCategories');
+const { buildSitemapXml } = require('../lib/sitemap');
 
 const router = express.Router();
 
 router.get('/', async (req, res) => {
   try {
-    const ctx = await getPageContext(req);
-    const [{ data: products }, { data: flash }, { data: reviews }] =
-      await Promise.all([
-        supabase
-          .from('products')
-          .select('*, categories(slug, name_en, name_bn, catalog_share)')
-          .order('legacy_id'),
-        supabase
-          .from('products')
-          .select('*, categories(slug, name_en, name_bn)')
-          .eq('is_flash_sale', true)
-          .order('legacy_id')
-          .limit(4),
-        supabase.from('reviews').select('*').order('created_at', { ascending: false }).limit(3),
-      ]);
-
-    let productList = (products || []).map(mapProduct);
-    const catFilter = req.query.category;
-    const q = (req.query.q || '').trim().toLowerCase();
-    if (catFilter && catFilter !== 'all') {
-      productList = productList.filter((p) => p.catSlug === catFilter);
-      ctx.activeNav = catFilter;
-    } else {
-      ctx.activeNav = 'home';
+    const cat = req.query.category;
+    const q = req.query.q;
+    if (cat && cat !== 'all' && !q) {
+      return res.redirect(301, `/category/${cat}`);
     }
-    if (q) {
-      productList = productList.filter(
-        (p) =>
-          p.name.toLowerCase().includes(q) ||
-          (p.nameBn && p.nameBn.includes(q)) ||
-          p.cat.toLowerCase().includes(q)
-      );
-    }
+    const data = await getHomeData(req, req.query);
+    const siteUrl = getSiteUrl(req);
+    const seo = seoForHome(siteUrl, { searchQuery: data.searchQuery });
+    res.render('index', { ...data, seo, siteUrl });
+  } catch (err) {
+    console.error(err);
+    res.status(500).render('error', { message: err.message });
+  }
+});
 
-    res.render('index', {
-      ...ctx,
-      searchQuery: req.query.q || '',
-      products: productList,
-      flashProducts: (flash || []).map(mapProduct),
-      reviews: reviews || [],
+router.get('/category/:slug', async (req, res) => {
+  try {
+    const slug = req.params.slug;
+    if (!isCatalogCategory(slug)) {
+      return res.status(404).render('error', { message: 'ক্যাটাগরি পাওয়া যায়নি' });
+    }
+    const data = await getHomeData(req, { category: slug });
+    const category = (data.categories || []).find((c) => c.slug === slug);
+    if (!category) {
+      return res.status(404).render('error', { message: 'ক্যাটাগরি পাওয়া যায়নি' });
+    }
+    const siteUrl = getSiteUrl(req);
+    const seo = seoForCategory(category, siteUrl);
+    res.render('index', { ...data, activeNav: slug, seo, siteUrl });
+  } catch (err) {
+    console.error(err);
+    res.status(500).render('error', { message: err.message });
+  }
+});
+
+router.get('/reviews', async (req, res) => {
+  try {
+    const data = await getReviewsPageData(req, req.query);
+    const siteUrl = getSiteUrl(req);
+    const seo = seoForReviews(siteUrl, {
+      currentPage: data.currentPage,
+      totalPages: data.totalPages,
     });
+    res.render('reviews', { ...data, seo, siteUrl });
+  } catch (err) {
+    console.error(err);
+    res.status(500).render('error', { message: err.message });
+  }
+});
+
+router.get('/track-order', async (req, res) => {
+  try {
+    const data = await getTrackOrderPageData(req, req.query);
+    const siteUrl = getSiteUrl(req);
+    const seo = seoForTrackOrder(siteUrl);
+    res.render('track-order', { ...data, seo, siteUrl });
+  } catch (err) {
+    console.error(err);
+    res.status(500).render('error', { message: err.message });
+  }
+});
+
+router.get('/new-arrivals', async (req, res) => {
+  try {
+    const data = await getNewArrivalsPageData(req);
+    const siteUrl = getSiteUrl(req);
+    const seo = seoForNewArrivals(siteUrl);
+    res.render('new-arrivals', { ...data, seo, siteUrl });
   } catch (err) {
     console.error(err);
     res.status(500).render('error', { message: err.message });
@@ -59,55 +100,29 @@ router.get('/', async (req, res) => {
 router.get(
   '/product/:id',
   asyncHandler(async (req, res) => {
-    const ctx = await getPageContext(req);
-    const { data: raw, error } = await filterByProductParam(
-      supabase.from('products').select('*, categories(slug, name_en, name_bn)'),
-      req.params.id
-    ).maybeSingle();
-
-    if (error) throw error;
-    if (!raw) {
+    const data = await getProductData(req, req.params.id);
+    if (!data) {
       return res.status(404).render('error', { message: 'পণ্য পাওয়া যায়নি' });
     }
-
-    const product = mapProduct(raw);
-
-    const relatedPromise = raw.category_id
-      ? supabase
-          .from('products')
-          .select('*, categories(slug, name_en, name_bn)')
-          .eq('category_id', raw.category_id)
-          .neq('id', raw.id)
-          .order('legacy_id')
-          .limit(8)
-      : Promise.resolve({ data: [] });
-
-    const [{ data: relatedRaw }, { data: productReviews }, { data: alsoLikeRaw }] =
-      await Promise.all([
-        relatedPromise,
-        supabase
-          .from('reviews')
-          .select('*')
-          .eq('product_id', raw.id)
-          .order('created_at', { ascending: false })
-          .limit(10),
-        supabase
-          .from('products')
-          .select('*, categories(slug, name_en, name_bn)')
-          .eq('is_featured', true)
-          .neq('id', raw.id)
-          .order('legacy_id')
-          .limit(4),
-      ]);
-
-    res.render('product', {
-      ...ctx,
-      product,
-      related: (relatedRaw || []).map(mapProduct),
-      alsoLike: (alsoLikeRaw || []).map(mapProduct),
-      productReviews: productReviews || [],
-    });
+    if (data.product?.slug && /^\d+$/.test(String(req.params.id))) {
+      return res.redirect(301, `/product/${data.product.slug}`);
+    }
+    const siteUrl = getSiteUrl(req);
+    const seo = seoForProduct(data.product, siteUrl);
+    res.render('product', { ...data, seo, siteUrl });
   })
 );
+
+router.get('/sitemap.xml', async (req, res) => {
+  try {
+    const xml = await buildSitemapXml(req);
+    res.set('Content-Type', 'application/xml; charset=utf-8');
+    res.set('Cache-Control', 'public, max-age=3600');
+    res.send(xml);
+  } catch (err) {
+    console.error(err);
+    res.status(500).send('Sitemap error');
+  }
+});
 
 module.exports = router;

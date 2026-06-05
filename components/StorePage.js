@@ -3,8 +3,9 @@
 import { useEffect, useState } from 'react';
 import { useRouter } from 'next/router';
 import Script from 'next/script';
+import SeoHead from './SeoHead';
 
-const CACHE_PREFIX = 'wn_page_v1:';
+const CACHE_PREFIX = 'wn_page_v4:';
 const CACHE_TTL_MS = 3 * 60 * 1000;
 
 export function readPageCache(path) {
@@ -34,6 +35,8 @@ export function writePageCache(path, props) {
           bodyHtml: props.bodyHtml,
           inlineScripts: props.inlineScripts || '',
           scriptSrcs: props.scriptSrcs || [],
+          seo: props.seo || null,
+          siteUrl: props.siteUrl || '',
         },
       })
     );
@@ -60,13 +63,23 @@ export async function refreshNavContext() {
   }
 }
 
+function initialStoreProps(pageProps, asPath) {
+  if (typeof window === 'undefined') return pageProps;
+  const cached = readPageCache((asPath || window.location.pathname).split('?')[0]);
+  if (cached?.bodyHtml) return { ...pageProps, ...cached };
+  return pageProps;
+}
+
 export default function StorePage({ pageProps }) {
   const router = useRouter();
-  const [live, setLive] = useState(pageProps);
+  const [live, setLive] = useState(() =>
+    initialStoreProps(pageProps, router.asPath)
+  );
 
   useEffect(() => {
+    if (!pageProps?.bodyHtml) return;
     setLive(pageProps);
-    if (pageProps.bodyHtml && router.asPath) {
+    if (router.asPath) {
       writePageCache(router.asPath, pageProps);
     }
   }, [pageProps, router.asPath]);
@@ -83,25 +96,40 @@ export default function StorePage({ pageProps }) {
     refreshNavContext();
   }, [live.bodyHtml]);
 
-  const { bodyHtml, inlineScripts, scriptSrcs } = live;
+  useEffect(() => {
+    if (typeof window.initProductPage === 'function' && window.__PRODUCT_PAGE__) {
+      window.initProductPage();
+    }
+    if (typeof window.initTrackOrderPage === 'function') {
+      window.initTrackOrderPage();
+    }
+  }, [live.bodyHtml, live.inlineScripts]);
+
+  const { bodyHtml, inlineScripts, scriptSrcs, seo, siteUrl } = live;
+  const isProductPage = router.pathname.startsWith('/product/');
+  const inlineStrategy = isProductPage ? 'beforeInteractive' : 'afterInteractive';
 
   return (
     <>
+      <SeoHead seo={seo} baseUrl={siteUrl} />
       <div
-        key={bodyHtml?.slice(0, 80)}
+        id="storePageContent"
         suppressHydrationWarning
         dangerouslySetInnerHTML={{ __html: bodyHtml || '' }}
       />
       {inlineScripts ? (
         <Script
-          id="store-inline-live"
-          strategy="afterInteractive"
+          key={`inline-${router.asPath}-${inlineScripts.length}`}
+          id={`store-inline-${router.asPath.replace(/[^a-z0-9]+/gi, '-')}`}
+          strategy={inlineStrategy}
           dangerouslySetInnerHTML={{ __html: inlineScripts }}
         />
       ) : null}
-      {scriptSrcs?.map((src) => (
-        <Script key={`live-${src}`} src={src} strategy="afterInteractive" />
-      ))}
+      {scriptSrcs
+        ?.filter((src) => src !== '/js/app.js')
+        .map((src) => (
+          <Script key={`${router.asPath}-${src}`} src={src} strategy="afterInteractive" />
+        ))}
     </>
   );
 }

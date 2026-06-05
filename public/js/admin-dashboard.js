@@ -50,18 +50,25 @@ function renderTopProducts(list) {
 }
 
 async function init() {
+  if (!document.getElementById('statRevenue')) return;
   const data = await adminApi('/stats');
-  document.getElementById('statRevenue').textContent = formatBDT(data.revenue);
-  document.getElementById('statOrders').textContent = formatStatNum(data.orderCount);
-  document.getElementById('statToday').textContent = `আজ: ${formatStatNum(data.todayOrders)}`;
-  document.getElementById('statProducts').textContent = formatStatNum(data.productCount);
-  document.getElementById('statPending').textContent = formatStatNum(data.pendingPayments);
+  const rev = document.getElementById('statRevenue');
+  if (rev) rev.textContent = formatBDT(data.revenue);
+  const ord = document.getElementById('statOrders');
+  if (ord) ord.textContent = formatStatNum(data.orderCount);
+  const today = document.getElementById('statToday');
+  if (today) today.textContent = `আজ: ${formatStatNum(data.todayOrders)}`;
+  const prod = document.getElementById('statProducts');
+  if (prod) prod.textContent = formatStatNum(data.productCount);
+  const pend = document.getElementById('statPending');
+  if (pend) pend.textContent = formatStatNum(data.pendingPayments);
 
   renderChart(data.chart);
   renderTopProducts(data.topProducts);
 
   const orders = await adminApi('/orders');
   const tbody = document.getElementById('ordersTableBody');
+  if (!tbody) return;
   tbody.innerHTML = (orders.orders || [])
     .slice(0, 6)
     .map(
@@ -109,4 +116,4 @@ function renderCatalogCategories(list) {
   `;
 }
 
-init().catch(console.error);
+runAdminPageInit(init);

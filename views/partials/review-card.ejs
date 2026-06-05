@@ -1,0 +1,26 @@
+<% const reviewCities = ['ঢাকা', 'চট্টগ্রাম', 'সিলেট', 'রাজশাহী', 'খুলনা', 'বরিশাল', 'গাজীপুর', 'নারায়ণগঞ্জ']; %>
+<% const city = reviewCities[(typeof i !== 'undefined' ? i : 0) % reviewCities.length]; %>
+<article class="review-card">
+  <% if (r.product_name_bn || r.product_name) { %>
+  <div class="review-product-tag">🛍️ <%= r.product_name_bn || r.product_name %></div>
+  <% } %>
+  <div class="review-top">
+    <div class="reviewer-avatar review-avatar-<%= (typeof i !== 'undefined' ? i : 0) % 4 %>" aria-hidden="true"><%= (r.reviewer_name || '?').slice(0, 2).toUpperCase() %></div>
+    <div class="reviewer-meta">
+      <div class="reviewer-name"><%= r.reviewer_name %></div>
+      <div class="reviewer-location">📍 <%= city %>, বাংলাদেশ</div>
+      <div class="review-stars-row">
+        <span class="stars" aria-label="<%= r.rating %> out of 5 stars"><%= '★'.repeat(r.rating) %><%= '☆'.repeat(5 - r.rating) %></span>
+        <span class="review-rating-num"><%= r.rating %>.0</span>
+      </div>
+    </div>
+  </div>
+  <div class="review-body">
+    <blockquote class="review-text is-clamped">"<%= r.comment %>"</blockquote>
+    <button type="button" class="review-see-more" hidden>See more</button>
+    <button type="button" class="review-see-less" hidden>See less</button>
+  </div>
+  <% if (r.is_verified) { %>
+  <div class="verified-badge">✅ Verified Purchase — WallNest BD</div>
+  <% } %>
+</article>

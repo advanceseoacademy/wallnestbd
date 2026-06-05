@@ -1,10 +1,29 @@
+if (typeof window !== 'undefined' && typeof window.runAdminPageInit !== 'function') {
+  window.runAdminPageInit = function runAdminPageInitStub(fn) {
+    requestAnimationFrame(() =>
+      requestAnimationFrame(() => {
+        if (typeof fn === 'function') {
+          try {
+            const p = fn();
+            if (p && typeof p.catch === 'function') p.catch(console.error);
+          } catch (err) {
+            console.error(err);
+          }
+        }
+      })
+    );
+  };
+}
+
 async function adminApi(path, options = {}) {
-  const res = await fetch(`/admin/api${path}`, {
+  const res = await fetch(`/api/admin${path}`, {
     headers: { 'Content-Type': 'application/json', ...options.headers },
     ...options,
   });
   const data = await res.json().catch(() => ({}));
-  if (!res.ok) throw new Error(data.error || 'Request failed');
+  if (!res.ok) {
+    throw new Error(data.error || `Request failed (${res.status})`);
+  }
   return data;
 }
 
@@ -52,3 +71,59 @@ async function loadPendingBadge() {
 setInterval(updateClock, 1000);
 updateClock();
 loadPendingBadge();
+
+function openAdminModal(overlayId) {
+  const el = document.getElementById(overlayId);
+  if (!el) return;
+  el.classList.add('is-open');
+  el.setAttribute('aria-hidden', 'false');
+  document.body.style.overflow = 'hidden';
+}
+
+function closeAdminModal(overlayId) {
+  const el = document.getElementById(overlayId);
+  if (!el) return;
+  el.classList.remove('is-open');
+  el.setAttribute('aria-hidden', 'true');
+  document.body.style.overflow = '';
+}
+
+function bindAdminModal(overlayId, onClose) {
+  const el = document.getElementById(overlayId);
+  if (!el) return;
+  el.querySelectorAll('[data-modal-close]').forEach((btn) => {
+    btn.addEventListener('click', onClose);
+  });
+  el.addEventListener('click', (e) => {
+    if (e.target === el) onClose();
+  });
+  document.addEventListener('keydown', (e) => {
+    if (e.key === 'Escape' && el.classList.contains('is-open')) onClose();
+  });
+}
+
+/** Run page init after AdminShell swaps #adminMain (avoids null innerHTML / onclick). */
+function runAdminPageInit(fn) {
+  const run = () => {
+    if (typeof fn !== 'function') return;
+    try {
+      const p = fn();
+      if (p && typeof p.catch === 'function') p.catch(console.error);
+    } catch (err) {
+      console.error(err);
+    }
+  };
+  requestAnimationFrame(() => requestAnimationFrame(run));
+}
+
+if (typeof window !== 'undefined') {
+  window.adminApi = adminApi;
+  window.formatBDT = formatBDT;
+  window.formatStatNum = formatStatNum;
+  window.paymentLabel = paymentLabel;
+  window.paymentStatusBadge = paymentStatusBadge;
+  window.openAdminModal = openAdminModal;
+  window.closeAdminModal = closeAdminModal;
+  window.bindAdminModal = bindAdminModal;
+  window.runAdminPageInit = runAdminPageInit;
+}

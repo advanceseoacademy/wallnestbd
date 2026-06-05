@@ -1,0 +1,78 @@
+<%- include('partials/head', { title: 'ক্যাটাগরি' }) %>
+<%- include('partials/sidebar', { page: 'categories', admin }) %>
+<div class="main">
+  <div class="topbar">
+    <div>
+      <div class="page-title">ক্যাটাগরি ম্যানেজমেন্ট</div>
+      <div class="page-subtitle">নাম, স্লাগ, আইকন — হিরো ছবি <a href="/admin/settings" style="color:var(--primary)">সেটিংস</a> থেকে</div>
+    </div>
+    <div class="topbar-right">
+      <button class="card-btn active" type="button" id="btnAddCategory">+ নতুন ক্যাটাগরি</button>
+    </div>
+  </div>
+  <div class="content">
+    <div class="card">
+      <div class="table-wrap">
+        <table>
+          <thead>
+            <tr>
+              <th>আইকন</th>
+              <th>নাম (BN / EN)</th>
+              <th>স্লাগ</th>
+              <th>ক্যাটালগ %</th>
+              <th>সাজানো</th>
+              <th>অ্যাকশন</th>
+            </tr>
+          </thead>
+          <tbody id="categoriesBody"></tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+</div>
+<div class="admin-modal-overlay" id="categoryModal" aria-hidden="true">
+  <div class="admin-modal-panel" role="dialog" aria-labelledby="categoryModalTitle">
+    <div class="admin-modal-header">
+      <h3 id="categoryModalTitle">ক্যাটাগরি</h3>
+      <button type="button" class="admin-modal-close" data-modal-close aria-label="বন্ধ করুন" title="বন্ধ (Esc)">×</button>
+    </div>
+    <form id="categoryForm">
+      <input type="hidden" id="categoryId">
+      <div class="form-group">
+        <label class="form-label">নাম (ইংরেজি) *</label>
+        <input class="form-input" id="catNameEn" required placeholder="e.g. Nature Wall Art">
+      </div>
+      <div class="form-group">
+        <label class="form-label">নাম (বাংলা)</label>
+        <input class="form-input" id="catNameBn" placeholder="যেমন: নেচার ওয়াল আর্ট">
+      </div>
+      <div class="form-group">
+        <label class="form-label">স্লাগ (URL) *</label>
+        <input class="form-input" id="catSlug" placeholder="nature-wall-art" pattern="[a-z0-9]+(?:-[a-z0-9]+)*">
+        <small style="color:var(--muted);font-size:12px;">স্টোর URL: /category/স্লাগ</small>
+      </div>
+      <div class="form-row" style="display:grid;grid-template-columns:1fr 1fr;gap:12px;">
+        <div class="form-group">
+          <label class="form-label">আইকন (emoji)</label>
+          <input class="form-input" id="catIcon" value="🖼️" maxlength="4">
+        </div>
+        <div class="form-group">
+          <label class="form-label">ক্যাটালগ মিক্স %</label>
+          <input class="form-input" type="number" id="catShare" min="0" max="100" placeholder="ঐচ্ছিক">
+        </div>
+      </div>
+      <div class="form-group">
+        <label class="form-label">সাজানোর ক্রম</label>
+        <input class="form-input" type="number" id="catSort" value="10" min="1">
+        <small style="color:var(--muted);font-size:12px;">১–৪ = হোমপেজ হিরোতে দেখাবে (ছবি সেটিংসে)</small>
+      </div>
+      <div class="admin-modal-actions">
+        <button class="btn-block" type="submit">সেভ করুন</button>
+        <button type="button" class="card-btn" style="width:100%;" data-modal-close>বাতিল</button>
+      </div>
+    </form>
+  </div>
+</div>
+<script src="/js/admin-common.js"></script>
+<script src="/js/admin-categories.js"></script>
+</body></html>

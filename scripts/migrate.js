@@ -29,13 +29,16 @@ async function main() {
   for (const file of files) {
     console.log(`Running ${file}...`);
     const sql = fs.readFileSync(path.join(dir, file), 'utf8');
-    const statements = sql
-      .split(';')
-      .map((s) => s.replace(/^\s*(--[^\n]*\n)+/gm, '').trim())
-      .filter((s) => s.length > 0);
+    const runWholeFile = /^010_reviews/.test(file);
+    const statements = runWholeFile
+      ? [sql.replace(/^\s*(--[^\n]*\n)+/gm, '').trim()]
+      : sql
+          .split(';')
+          .map((s) => s.replace(/^\s*(--[^\n]*\n)+/gm, '').trim())
+          .filter((s) => s.length > 0);
     for (const stmt of statements) {
       try {
-        await runQuery(stmt + ';');
+        await runQuery(runWholeFile ? stmt : stmt + ';');
       } catch (e) {
         if (!String(e.message).includes('already exists')) console.warn(e.message.slice(0, 120));
       }

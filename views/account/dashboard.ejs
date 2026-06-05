@@ -7,7 +7,7 @@
 <title>আমার অ্যাকাউন্ট — WallNest BD</title>
 <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=Hind+Siliguri:wght@300;400;500;600;700&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="/css/style.css">
-<link rel="stylesheet" href="/css/user-dashboard.css?v=13">
+<link rel="stylesheet" href="/css/user-dashboard.css?v=23">
 </head>
 <body class="account-page">
 <script>window.__ACCOUNT__ = <%- accountJson %>;</script>
@@ -77,7 +77,7 @@
     <div class="dash-topbar-title" id="pageTitle">আমার ড্যাশবোর্ড</div>
     <div class="dash-topbar-right">
       <div class="greeting-chip" id="greetingChip">👋 Good morning</div>
-      <div class="tb-btn" onclick="showPage('notifications', document.querySelector('.nav-item[onclick*=notifications]'))" title="নোটিফিকেশন">
+      <div class="tb-btn tb-btn--desktop" onclick="showPage('notifications', document.querySelector('.nav-item[onclick*=notifications]'))" title="নোটিফিকেশন">
         🔔 <div class="tb-notif"></div>
       </div>
       <a class="tb-btn" href="/" title="শপিং">🛒</a>
@@ -363,11 +363,60 @@
 </div><!-- end dashboard-shell -->
 </div><!-- end account-dashboard -->
 
+<nav class="dash-mobile-nav" id="dashMobileNav" aria-label="অ্যাকাউন্ট মেনু">
+  <div class="dash-mobile-nav-scroll">
+    <button type="button" class="dash-mnav-item active" data-page="dashboard" onclick="showPage('dashboard', this)">
+      <span class="dash-mnav-icon">🏠</span><span class="dash-mnav-label">ড্যাশবোর্ড</span>
+    </button>
+    <button type="button" class="dash-mnav-item" data-page="orders" onclick="showPage('orders', this)">
+      <span class="dash-mnav-icon">📦</span><span class="dash-mnav-label">অর্ডার</span>
+      <span class="dash-mnav-badge" id="mnavBadgeOrders" style="display:none"></span>
+    </button>
+    <button type="button" class="dash-mnav-item" data-page="wishlist" onclick="showPage('wishlist', this)">
+      <span class="dash-mnav-icon">❤️</span><span class="dash-mnav-label">উইশলিস্ট</span>
+    </button>
+    <button type="button" class="dash-mnav-item" data-page="address" onclick="showPage('address', this)">
+      <span class="dash-mnav-icon">📍</span><span class="dash-mnav-label">ঠিকানা</span>
+    </button>
+    <button type="button" class="dash-mnav-item" data-page="coupons" onclick="showPage('coupons', this)">
+      <span class="dash-mnav-icon">🏷️</span><span class="dash-mnav-label">কুপন</span>
+      <span class="dash-mnav-badge dash-mnav-badge--amber" id="mnavBadgeCoupons" style="display:none"></span>
+    </button>
+    <button type="button" class="dash-mnav-item" data-page="profile" onclick="showPage('profile', this)">
+      <span class="dash-mnav-icon">👤</span><span class="dash-mnav-label">প্রোফাইল</span>
+    </button>
+    <button type="button" class="dash-mnav-item" data-page="notifications" onclick="showPage('notifications', this)">
+      <span class="dash-mnav-icon">🔔</span><span class="dash-mnav-label">নোটিফ</span>
+      <span class="dash-mnav-badge" id="mnavBadgeNotif" style="display:none"></span>
+    </button>
+    <button type="button" class="dash-mnav-item" data-page="rewards" onclick="showPage('rewards', this)">
+      <span class="dash-mnav-icon">🎁</span><span class="dash-mnav-label">রিওয়ার্ড</span>
+    </button>
+  </div>
+</nav>
+
 <%- include('../partials/site-footer') %>
 <%- include('../partials/cart-modals') %>
 
+<div class="modal-overlay" id="notifViewModal" onclick="if(event.target===this)closeNotifView()">
+  <div class="modal notif-view-modal" role="dialog" aria-labelledby="notifViewTitle" aria-modal="true">
+    <div class="modal-header">
+      <h3 id="notifViewTitle">নোটিফিকেশন</h3>
+      <button type="button" class="modal-close" onclick="closeNotifView()" aria-label="বন্ধ করুন">✕</button>
+    </div>
+    <div class="modal-body notif-view-body">
+      <div class="notif-view-icon-wrap notif-icon blue" id="notifViewIconWrap">
+        <span class="notif-view-icon" id="notifViewIcon">🔔</span>
+      </div>
+      <div class="notif-view-time" id="notifViewTime"></div>
+      <p class="notif-view-text" id="notifViewBody"></p>
+      <a id="notifViewAction" class="notif-view-action" href="#" style="display:none">বিস্তারিত দেখুন</a>
+    </div>
+  </div>
+</div>
+
 <div class="toast-area" id="toastArea"></div>
 <script src="/js/app.js"></script>
-<script src="/js/user-dashboard.js?v=9"></script>
+<script src="/js/user-dashboard.js?v=16"></script>
 </body>
 </html>

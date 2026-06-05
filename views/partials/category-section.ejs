@@ -1,0 +1,28 @@
+<section class="section category-products-section" id="category-<%= sec.slug %>" data-category="<%= sec.slug %>">
+  <div class="section-header">
+    <div class="section-title"><%= sec.icon %> <%= sec.nameBn %> / <span><%= sec.nameEn %></span></div>
+    <a href="/category/<%= sec.slug %>" class="see-all">সব দেখুন →</a>
+  </div>
+  <% if (sec.products && sec.products.length) { %>
+  <div
+    class="collection-carousel category-carousel"
+    id="carousel-<%= sec.slug %>"
+    data-category-carousel="1"
+  >
+    <div class="collection-carousel-viewport" aria-label="<%= sec.nameBn %>">
+      <div class="collection-track" id="track-<%= sec.slug %>">
+        <% sec.products.forEach(function(p) { %>
+          <%- include('product-card', { p: p }) %>
+        <% }); %>
+        <% if (sec.products.length >= 2) { sec.products.forEach(function(p) { %>
+          <%- include('product-card', { p: p }) %>
+        <% }); } %>
+      </div>
+    </div>
+  </div>
+  <% } else { %>
+  <div class="category-section-empty">
+    <p>এই ক্যাটাগরিতে এখনো পণ্য নেই।</p>
+  </div>
+  <% } %>
+</section>

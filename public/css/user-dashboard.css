@@ -38,14 +38,18 @@
 
 body.account-page {
   -webkit-font-smoothing: antialiased;
+  overflow-x: hidden;
   /* toast sits outside .account-dashboard */
   --ink: #004F93;
   --r-sm: 10px;
+  --wn-stick-top: 148px;
 }
 
 .account-dashboard {
-  padding: 20px 0 32px;
+  padding: 8px 0 24px;
   background: var(--bg);
+  overflow-x: hidden;
+  max-width: 100%;
 }
 
 /* ── LAYOUT (same max width as site .site-wrap) ── */
@@ -62,6 +66,8 @@ body.account-page {
 
 .layout {
   display: flex;
+  align-items: flex-start;
+  gap: 20px;
   min-height: 480px;
   width: 100%;
 }
@@ -71,27 +77,43 @@ body.account-page {
   width: 268px;
   flex-shrink: 0;
   background: var(--white);
-  border-right: 1px solid var(--border);
+  border: 1px solid var(--border);
   display: flex;
   flex-direction: column;
-  position: sticky;
-  top: 132px;
   align-self: flex-start;
-  max-height: calc(100vh - 148px);
-  z-index: 40;
-  overflow-y: auto;
   border-radius: var(--r);
   box-shadow: var(--shadow-md);
 }
 
+@media (min-width: 992px) {
+  body.account-page .layout {
+    align-items: flex-start;
+  }
+
+  .account-page .sidebar,
+  .account-page .main {
+    margin-top: 0;
+    align-self: flex-start;
+  }
+
+  .account-page .main {
+    overflow: visible;
+  }
+
+  .account-page .main > .content.page.active {
+    overflow: visible;
+  }
+}
+
 .sidebar-top {
-  padding: 28px 24px 20px;
+  padding: 0 16px 12px;
   border-bottom: 1px solid var(--border);
 }
 .brand { display: flex; align-items: center; gap: 10px; margin-bottom: 24px; }
 .brand.brand-logo-only {
+  display: flex;
   justify-content: flex-start;
-  margin-bottom: 20px;
+  margin-bottom: 14px;
 }
 .brand.brand-logo-only a.brand-logo {
   display: block;
@@ -123,14 +145,34 @@ body.account-page {
 .user-profile-card {
   background: linear-gradient(160deg, var(--blue-soft) 0%, #fff 55%);
   border: 1px solid var(--blue-mid);
-  border-radius: var(--r);
+  border-radius: 0 0 var(--r) var(--r);
   padding: 16px;
   display: flex;
   flex-direction: column;
   align-items: center;
   text-align: center;
   gap: 10px;
-  margin-top: 4px;
+  margin-top: 0;
+}
+
+@media (min-width: 992px) {
+  .account-page .sidebar-top {
+    padding-top: 0;
+    border-bottom: none;
+  }
+
+  .account-page .user-profile-card {
+    border-top: none;
+    border-left: none;
+    border-right: none;
+    border-radius: 0;
+    margin: 0;
+  }
+
+  .account-page .sidebar-nav {
+    padding-top: 12px;
+    border-top: 1px solid var(--border);
+  }
 }
 .user-avatar-ring {
   width: 64px; height: 64px;
@@ -161,7 +203,7 @@ body.account-page {
 }
 
 /* Nav */
-.sidebar-nav { padding: 16px 12px; flex: 1; }
+.sidebar-nav { padding: 12px 12px 16px; flex: 1; }
 .nav-section-label {
   font-size: 10px;
   font-weight: 700;
@@ -230,19 +272,24 @@ body.account-page {
   min-width: 0;
   display: flex;
   flex-direction: column;
+  background: var(--white);
+  border: 1px solid var(--border);
+  border-radius: var(--r);
+  box-shadow: var(--shadow-md);
+  overflow: hidden;
 }
 
 /* ── DASHBOARD TOPBAR (not site .topbar promo bar) ── */
 .dash-topbar {
   background: var(--white);
   border-bottom: 1px solid var(--border);
-  padding: 0 32px;
-  height: 62px;
+  padding: 0 28px;
+  height: 64px;
+  min-height: 64px;
   display: flex;
   align-items: center;
   gap: 16px;
-  position: sticky;
-  top: 0;
+  position: relative;
   z-index: 50;
   box-shadow: var(--shadow);
 }
@@ -780,6 +827,51 @@ body.account-page {
 .notif-time { font-size: 11px; color: var(--muted); margin-top: 3px; }
 .unread-dot { width: 7px; height: 7px; border-radius: 50%; background: var(--blue); margin-top: 6px; flex-shrink: 0; }
 
+/* ── NOTIFICATION VIEW POPUP ── */
+.notif-view-modal { max-width: 460px; width: calc(100% - 32px); }
+.notif-view-body {
+  text-align: center;
+  padding-top: 8px !important;
+}
+.notif-view-icon-wrap {
+  width: 64px;
+  height: 64px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin: 0 auto 16px;
+  font-size: 28px;
+}
+.notif-view-icon { line-height: 1; }
+.notif-view-time {
+  font-size: 12px;
+  color: var(--muted);
+  margin-bottom: 14px;
+}
+.notif-view-text {
+  font-size: 15px;
+  line-height: 1.7;
+  color: var(--text);
+  margin: 0 0 24px;
+  text-align: center;
+}
+.notif-view-action {
+  display: inline-block;
+  background: var(--blue);
+  color: #fff;
+  text-decoration: none;
+  font-size: 14px;
+  font-weight: 600;
+  padding: 12px 24px;
+  border-radius: var(--r-sm);
+  transition: background 0.2s, transform 0.15s;
+}
+.notif-view-action:hover {
+  background: #1D4ED8;
+  transform: translateY(-1px);
+}
+
 /* ── PROFILE FORM ── */
 .profile-header {
   display: flex;
@@ -962,20 +1054,294 @@ body.account-page {
 #page-dashboard > .grid-3-2,
 #page-dashboard > .grid-2-1 { animation: slideUp 0.35s ease 0.08s both; }
 
+/* ── MOBILE BOTTOM NAV (hidden on desktop) ── */
+.dash-mobile-nav {
+  display: none;
+}
+
 /* ── RESPONSIVE ── */
 @media (max-width: 1100px) {
   .grid-3-2 { grid-template-columns: 1fr; }
   .grid-3 { grid-template-columns: 1fr 1fr; }
-  .quick-actions { grid-template-columns: repeat(3, 1fr); }
+  .quick-actions { grid-template-columns: repeat(3, minmax(0, 1fr)); }
 }
-@media (max-width: 800px) {
-  :root { --sidebar-w: 0; }
-  .dashboard-shell { padding-left: 16px; padding-right: 16px; }
-  .account-page .sidebar { display: none; }
-  .account-dashboard { padding-top: 12px; }
-  .grid-2-1, .grid-1-1, .grid-3 { grid-template-columns: 1fr; }
-  .content { padding: 18px 16px; }
-  .dash-topbar { padding: 0 16px; }
+
+@media (max-width: 991px) {
+  .account-dashboard {
+    --site-pad: 14px;
+    padding: 12px 0 80px;
+  }
+
+  .dashboard-shell {
+    padding-left: var(--site-pad);
+    padding-right: var(--site-pad);
+  }
+
+  .layout {
+    flex-direction: column;
+    min-height: 0;
+  }
+
+  .account-dashboard .sidebar,
+  .account-page .sidebar {
+    display: none !important;
+  }
+
+  .main {
+    width: 100%;
+    max-width: 100%;
+    min-width: 0;
+  }
+
+  .dash-topbar {
+    height: auto;
+    min-height: 52px;
+    padding: 10px 14px;
+    gap: 10px;
+    top: 0;
+    position: sticky;
+    flex-wrap: nowrap;
+  }
+
+  .dash-topbar-title {
+    font-size: 1rem;
+    flex: 1;
+    min-width: 0;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+
+  .dash-topbar-right {
+    flex-shrink: 0;
+    gap: 8px;
+  }
+
+  .greeting-chip,
+  .tb-btn--desktop {
+    display: none;
+  }
+
+  .content {
+    padding: 16px 14px;
+    gap: 20px;
+  }
+
+  .welcome-hero {
+    flex-direction: column;
+    align-items: stretch;
+    padding: 20px 18px;
+    gap: 18px;
+  }
+
+  .welcome-name {
+    font-size: 1.35rem;
+    word-break: break-word;
+  }
+
+  .welcome-sub {
+    font-size: 13px;
+    margin-bottom: 16px;
+  }
+
+  .welcome-btns {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .welcome-btns .btn-hero,
+  .welcome-btns .btn-hero-ghost {
+    width: 100%;
+    justify-content: center;
+  }
+
+  .welcome-right {
+    width: 100%;
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 10px;
+  }
+
+  .welcome-stat {
+    min-width: 0;
+    padding: 14px 10px;
+  }
+
+  .ws-value {
+    font-size: 1.25rem;
+  }
+
+  .ws-label {
+    font-size: 10px;
+  }
+
+  .quick-actions {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 12px;
+  }
+
+  .grid-2-1,
+  .grid-1-1,
+  .grid-3 {
+    grid-template-columns: 1fr;
+    gap: 20px;
+  }
+
+  .card-header {
+    flex-wrap: wrap;
+    gap: 8px;
+    padding: 12px 14px;
+  }
+
+  .card-body {
+    padding: 14px !important;
+  }
+
+  .order-item,
+  .wish-item {
+    flex-wrap: wrap;
+  }
+
+  .profile-header {
+    flex-direction: column;
+    text-align: center;
+  }
+
+  .dash-mobile-nav {
+    display: block;
+    position: fixed;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    z-index: 200;
+    background: var(--white);
+    border-top: 1px solid var(--border);
+    box-shadow: 0 -4px 20px rgba(15, 23, 42, 0.1);
+    padding: 8px 0 calc(8px + env(safe-area-inset-bottom, 0px));
+  }
+
+  .dash-mobile-nav-scroll {
+    display: flex;
+    align-items: stretch;
+    gap: 4px;
+    overflow-x: auto;
+    overflow-y: hidden;
+    -webkit-overflow-scrolling: touch;
+    scrollbar-width: none;
+    padding: 0 8px;
+  }
+
+  .dash-mobile-nav-scroll::-webkit-scrollbar {
+    display: none;
+  }
+
+  .dash-mnav-item {
+    position: relative;
+    flex: 0 0 auto;
+    min-width: 68px;
+    max-width: 80px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 3px;
+    padding: 8px 6px;
+    border: none;
+    background: none;
+    border-radius: var(--r-sm);
+    cursor: pointer;
+    font-family: inherit;
+    color: var(--muted);
+    transition: background 0.15s, color 0.15s;
+  }
+
+  .dash-mnav-item.active {
+    color: var(--blue);
+    background: var(--blue-soft);
+    box-shadow: inset 0 -2px 0 var(--blue);
+  }
+
+  .dash-mnav-icon {
+    font-size: 20px;
+    line-height: 1;
+  }
+
+  .dash-mnav-label {
+    font-size: 10px;
+    font-weight: 600;
+    line-height: 1.2;
+    white-space: nowrap;
+    text-align: center;
+  }
+
+  .dash-mnav-badge {
+    position: absolute;
+    top: 4px;
+    right: 6px;
+    min-width: 16px;
+    height: 16px;
+    padding: 0 4px;
+    border-radius: 8px;
+    background: var(--red);
+    color: #fff;
+    font-size: 9px;
+    font-weight: 700;
+    line-height: 16px;
+    text-align: center;
+  }
+
+  .dash-mnav-badge--amber {
+    background: var(--amber);
+  }
+
+  body.account-page footer,
+  body.account-page .footer {
+    padding-bottom: calc(72px + env(safe-area-inset-bottom, 0px));
+  }
+
+  .toast-area {
+    bottom: calc(76px + env(safe-area-inset-bottom, 0px));
+    right: 12px;
+    left: 12px;
+  }
+
+  .toast {
+    max-width: none;
+  }
+}
+
+@media (max-width: 480px) {
+  .account-dashboard {
+    --site-pad: 10px;
+  }
+
+  .quick-actions {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .qa-card {
+    padding: 14px 10px;
+  }
+
+  .qa-label {
+    font-size: 11px;
+  }
+
+  .welcome-right {
+    grid-template-columns: 1fr;
+  }
+
+  .welcome-stat {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    text-align: left;
+    padding: 12px 14px;
+  }
+
+  .ws-label {
+    margin-top: 0;
+  }
 }
 
 /* ── TOAST ── */

@@ -140,7 +140,8 @@ function renderWishItem(w) {
 }
 
 function renderNotifItem(n) {
-  return `<div class="notif-item ${n.unread ? 'unread' : ''}">
+  const id = n.id || `notif-${String(n.time || '').replace(/\s/g, '-')}`;
+  return `<div class="notif-item ${n.unread ? 'unread' : ''}" data-notif-id="${id}" role="button" tabindex="0" aria-label="নোটিফিকেশন দেখুন">
     <div class="notif-icon ${n.color}">${n.icon}</div>
     <div style="flex:1">
       <div class="notif-text">${n.text}</div>
@@ -148,6 +149,66 @@ function renderNotifItem(n) {
     </div>
     ${n.unread ? '<div class="unread-dot"></div>' : ''}
   </div>`;
+}
+
+function stripHtml(html) {
+  const el = document.createElement('div');
+  el.innerHTML = html || '';
+  return el.textContent || '';
+}
+
+function markNotifRead(id) {
+  const n = notifications.find((x) => x.id === id);
+  if (!n || !n.unread) return;
+  n.unread = false;
+  const unread = notifications.filter((item) => item.unread).length;
+  setBadge('badgeNotif', unread);
+  document.querySelectorAll(`.notif-item[data-notif-id="${id}"]`).forEach((el) => {
+    el.classList.remove('unread');
+    el.querySelector('.unread-dot')?.remove();
+  });
+  if (unread === 0) document.querySelector('.tb-notif')?.remove();
+}
+
+function openNotifView(id) {
+  const n = notifications.find((x) => x.id === id);
+  if (!n) return;
+
+  const modal = document.getElementById('notifViewModal');
+  const titleEl = document.getElementById('notifViewTitle');
+  const iconEl = document.getElementById('notifViewIcon');
+  const iconWrap = document.getElementById('notifViewIconWrap');
+  const timeEl = document.getElementById('notifViewTime');
+  const bodyEl = document.getElementById('notifViewBody');
+  const actionEl = document.getElementById('notifViewAction');
+
+  if (titleEl) titleEl.textContent = n.title || 'নোটিফিকেশন';
+  if (iconEl) iconEl.textContent = n.icon || '🔔';
+  if (iconWrap) {
+    iconWrap.className = `notif-view-icon-wrap notif-icon ${n.color || 'blue'}`;
+  }
+  if (timeEl) timeEl.textContent = n.time || '';
+  if (bodyEl) bodyEl.textContent = n.body || stripHtml(n.text);
+
+  if (actionEl) {
+    if (n.actionUrl) {
+      actionEl.href = n.actionUrl;
+      actionEl.textContent = n.actionLabel || 'বিস্তারিত দেখুন';
+      actionEl.style.display = 'inline-block';
+    } else {
+      actionEl.style.display = 'none';
+      actionEl.removeAttribute('href');
+    }
+  }
+
+  modal?.classList.add('open');
+  document.body.style.overflow = 'hidden';
+  markNotifRead(id);
+}
+
+function closeNotifView() {
+  document.getElementById('notifViewModal')?.classList.remove('open');
+  document.body.style.overflow = '';
 }
 
 function renderCouponItem(c) {
@@ -195,14 +256,24 @@ function renderTrackingBar(status) {
 }
 
 function setBadge(id, count) {
-  const el = document.getElementById(id);
-  if (!el) return;
-  if (count > 0) {
-    el.textContent = String(count);
-    el.style.display = '';
-  } else {
-    el.style.display = 'none';
-  }
+  const ids = [id];
+  const mnavMap = {
+    badgeOrders: 'mnavBadgeOrders',
+    badgeNotif: 'mnavBadgeNotif',
+    badgeCoupons: 'mnavBadgeCoupons',
+  };
+  if (mnavMap[id]) ids.push(mnavMap[id]);
+
+  ids.forEach((badgeId) => {
+    const el = document.getElementById(badgeId);
+    if (!el) return;
+    if (count > 0) {
+      el.textContent = String(count);
+      el.style.display = '';
+    } else {
+      el.style.display = 'none';
+    }
+  });
 }
 
 function setText(id, text) {
@@ -499,9 +570,20 @@ function showPage(name, navEl) {
   document.getElementById('page-' + name)?.classList.add('active');
   document.getElementById('pageTitle').textContent = pageTitles[name] || name;
 
-  if (navEl) {
+  document.querySelectorAll('.dash-mnav-item').forEach((el) => {
+    el.classList.toggle('active', el.dataset.page === name);
+  });
+
+  if (navEl?.classList?.contains('nav-item')) {
     document.querySelectorAll('.nav-item').forEach((n) => n.classList.remove('active'));
     navEl.classList.add('active');
+  } else if (navEl?.classList?.contains('dash-mnav-item')) {
+    document.querySelectorAll('.nav-item').forEach((n) => n.classList.remove('active'));
+    document.querySelectorAll('.nav-item').forEach((n) => {
+      if (n.getAttribute('onclick')?.includes("'" + name + "'")) {
+        n.classList.add('active');
+      }
+    });
   } else {
     document.querySelectorAll('.nav-item').forEach((n) => {
       if (n.getAttribute('onclick')?.includes("'" + name + "'")) {
@@ -619,43 +701,11 @@ async function onWishCartClick(e) {
   }
 }
 
-function bootDashboard() {
-  if (window.__ACCOUNT__?.user) {
-    applyAccountData(window.__ACCOUNT__);
-  }
-}
-
 function finishAccountLoading() {
   document.body.classList.remove('account-loading');
 }
 
-async function init() {
-  applyTimeGreetings();
-  bootDashboard();
-  paintDashboardUI();
-
-  if (window.__ACCOUNT__?.user) {
-    finishAccountLoading();
-  }
-
-  enrichWishlist()
-    .then(() => paintLists())
-    .catch(() => {});
-
-  try {
-    const data = await fetchAccount();
-    applyAccountData(data);
-    paintDashboardUI();
-  } catch (err) {
-    if (String(err.message).includes('লগইন')) {
-      window.location.href = '/?login=1&next=/account';
-      return;
-    }
-    showToast(err.message);
-  } finally {
-    finishAccountLoading();
-  }
-
+function bindDashboardEvents() {
   document.getElementById('logoutBtn')?.addEventListener('click', async () => {
     await api('/auth/logout', { method: 'POST' });
     window.location.href = '/';
@@ -673,7 +723,97 @@ async function init() {
     resetProfileForm();
     showToast('ফর্ম পুনরায় লোড হয়েছে');
   });
+
+  document.addEventListener('click', (e) => {
+    const item = e.target.closest('.notif-item[data-notif-id]');
+    if (!item) return;
+    openNotifView(item.dataset.notifId);
+  });
+
+  document.addEventListener('keydown', (e) => {
+    if (e.key === 'Escape') closeNotifView();
+    const item = e.target.closest('.notif-item[data-notif-id]');
+    if (item && (e.key === 'Enter' || e.key === ' ')) {
+      e.preventDefault();
+      openNotifView(item.dataset.notifId);
+    }
+  });
 }
+
+async function init() {
+  syncAccountStickyOffset();
+  applyTimeGreetings();
+  bindDashboardEvents();
+
+  if (window.__ACCOUNT__?.user) {
+    applyAccountData(window.__ACCOUNT__);
+    paintDashboardUI();
+    finishAccountLoading();
+    enrichWishlist()
+      .then(() => paintLists())
+      .catch(() => {});
+    return;
+  }
+
+  document.body.classList.add('account-loading');
+  try {
+    const data = await fetchAccount();
+    applyAccountData(data);
+    paintDashboardUI();
+  } catch (err) {
+    if (String(err.message).includes('লগইন')) {
+      window.location.href = '/?login=1&next=/account';
+      return;
+    }
+    showToast(err.message);
+  } finally {
+    finishAccountLoading();
+  }
+
+  enrichWishlist()
+    .then(() => paintLists())
+    .catch(() => {});
+}
+
+function syncAccountStickyOffset() {
+  const topbar = document.querySelector('.topbar');
+  const header = document.querySelector('header');
+  const nav = document.querySelector('nav');
+  const offset =
+    (topbar?.offsetHeight || 0) +
+    (header?.offsetHeight || 0) +
+    (nav?.offsetHeight || 0) +
+    8;
+  document.documentElement.style.setProperty('--wn-stick-top', `${offset}px`);
+}
+
+function bindAccountStickyOffset() {
+  syncAccountStickyOffset();
+  window.addEventListener('resize', syncAccountStickyOffset, { passive: true });
+}
+
+function bootUserDashboard() {
+  bindAccountStickyOffset();
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', init);
+  } else {
+    init();
+  }
+}
+
+window.syncAccountStickyOffset = syncAccountStickyOffset;
+
+window.refreshAccountDashboard = function refreshAccountDashboard() {
+  syncAccountStickyOffset();
+  if (window.__ACCOUNT__?.user) {
+    applyAccountData(window.__ACCOUNT__);
+    paintDashboardUI();
+    finishAccountLoading();
+    enrichWishlist()
+      .then(() => paintLists())
+      .catch(() => {});
+  }
+};
 
 window.showPage = showPage;
 window.setOrderTab = setOrderTab;
@@ -681,6 +821,8 @@ window.saveProfile = saveProfile;
 window.resetProfileForm = resetProfileForm;
 window.copyCode = copyCode;
 window.markAllRead = markAllRead;
+window.openNotifView = openNotifView;
+window.closeNotifView = closeNotifView;
 window.showToast = showToast;
 
-document.addEventListener('DOMContentLoaded', init);
+bootUserDashboard();

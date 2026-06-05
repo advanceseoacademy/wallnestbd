@@ -3,16 +3,29 @@ const path = require('path');
 const { supabase } = require('../lib/supabase');
 const { adminQuery } = require('../lib/dbAdmin');
 const { requireAdmin } = require('../middleware/adminAuth');
-const { upload } = require('../lib/upload');
+const { upload, uploadCategory } = require('../lib/upload');
+const { resolveCategoryHeroUrl } = require('../lib/categoryHero');
 const {
-  WALL_ART_CATEGORY_SLUGS,
   filterAdminCategories,
+  slugifyCategory,
+  isCatalogCategory,
 } = require('../lib/catalogCategories');
+const { bustCatalog } = require('../lib/catalogCache');
+const {
+  normalizeProductImages,
+  primaryImageUrl,
+  resolveProductImagesForDb,
+} = require('../lib/productImages');
+const { resolveProductSlugForDb } = require('../lib/productSlug');
+const { resolveProductSizesForDb, normalizeProductSizes } = require('../lib/productSizes');
+const { processProductUpload, processCategoryUpload } = require('../lib/optimizeImage');
+const { mergePaymentSettings } = require('../lib/paymentDefaults');
 
 const router = express.Router();
 
 function mapAdminProduct(p) {
   const cat = p.categories || {};
+  const images = normalizeProductImages(p.images, p.image_url);
   return {
     id: p.id,
     legacyId: p.legacy_id,
@@ -21,7 +34,10 @@ function mapAdminProduct(p) {
     cat: cat.name_en,
     catId: p.category_id,
     icon: p.icon,
-    imageUrl: p.image_url,
+    images,
+    slug: p.slug,
+    sizes: normalizeProductSizes(p.sizes, p),
+    imageUrl: primaryImageUrl(images, p.image_url),
     price: Number(p.price),
     original: Number(p.original_price),
     stock: p.stock,
@@ -67,8 +83,16 @@ router.get('/products', requireAdmin, (req, res) => {
   res.render('admin/products', { page: 'products', admin: req.session.admin });
 });
 
+router.get('/categories', requireAdmin, (req, res) => {
+  res.render('admin/categories', { page: 'categories', admin: req.session.admin });
+});
+
 router.get('/payments', requireAdmin, (req, res) => {
   res.render('admin/payments', { page: 'payments', admin: req.session.admin });
+});
+
+router.get('/settings', requireAdmin, (req, res) => {
+  res.render('admin/settings', { page: 'settings', admin: req.session.admin });
 });
 
 // ── Admin API ──
@@ -132,8 +156,8 @@ api.get('/stats', async (_req, res) => {
     const { data: catalogCats } = await supabase
       .from('categories')
       .select('id, slug, name_en, name_bn, icon, catalog_share')
-      .in('slug', WALL_ART_CATEGORY_SLUGS)
       .order('sort_order');
+    const filteredCats = filterAdminCategories(catalogCats);
 
     const { data: allProducts } = await supabase
       .from('products')
@@ -146,7 +170,7 @@ api.get('/stats', async (_req, res) => {
       }
     });
 
-    const categories = (catalogCats || []).map((c) => ({
+    const categories = (filteredCats || []).map((c) => ({
       name: c.name_en,
       nameBn: c.name_bn,
       icon: c.icon || '🖼️',
@@ -240,17 +264,169 @@ api.get('/products', async (_req, res) => {
 });
 
 api.get('/categories', async (_req, res) => {
-  const { data } = await supabase
-    .from('categories')
-    .select('id, slug, name_en, name_bn, icon, catalog_share')
-    .in('slug', WALL_ART_CATEGORY_SLUGS)
-    .order('sort_order');
-  res.json({ categories: filterAdminCategories(data) });
+  try {
+    const { data, error } = await supabase
+      .from('categories')
+      .select(
+        'id, slug, name_en, name_bn, icon, sort_order, catalog_share, hero_image_url'
+      )
+      .order('sort_order');
+    if (error) throw error;
+    const categories = filterAdminCategories(data).map((c) => ({
+      ...c,
+      hero_image_url: c.hero_image_url || resolveCategoryHeroUrl(c),
+    }));
+    res.json({ categories });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+api.post('/categories', async (req, res) => {
+  try {
+    const b = req.body;
+    const nameEn = (b.name_en || '').trim();
+    if (!nameEn) return res.status(400).json({ error: 'ইংরেজি নাম প্রয়োজন' });
+
+    let slug = (b.slug || slugifyCategory(nameEn)).trim().toLowerCase();
+    if (!slug) return res.status(400).json({ error: 'স্লাগ প্রয়োজন' });
+    if (slug === 'all' || !isCatalogCategory(slug)) {
+      return res.status(400).json({ error: 'এই স্লাগ ব্যবহার করা যাবে না' });
+    }
+
+    const { data: existing } = await supabase
+      .from('categories')
+      .select('id')
+      .eq('slug', slug)
+      .maybeSingle();
+    if (existing) return res.status(400).json({ error: 'স্লাগ ইতিমধ্যে আছে' });
+
+    const { data: last } = await supabase
+      .from('categories')
+      .select('sort_order')
+      .order('sort_order', { ascending: false })
+      .limit(1)
+      .maybeSingle();
+
+    const { data, error } = await supabase
+      .from('categories')
+      .insert({
+        slug,
+        name_en: nameEn,
+        name_bn: (b.name_bn || '').trim() || null,
+        icon: (b.icon || '🖼️').trim() || '🖼️',
+        sort_order: Number(b.sort_order ?? (last?.sort_order ?? 0) + 1),
+        catalog_share:
+          b.catalog_share === '' || b.catalog_share == null
+            ? null
+            : Number(b.catalog_share),
+        hero_image_url: (b.hero_image_url || '').trim() || null,
+      })
+      .select()
+      .single();
+    if (error) throw error;
+    bustCatalog();
+    res.json({ ok: true, category: data });
+  } catch (err) {
+    res.status(400).json({ error: err.message });
+  }
+});
+
+api.put('/categories/:id', async (req, res) => {
+  try {
+    const b = req.body;
+    const { data: current, error: fetchErr } = await supabase
+      .from('categories')
+      .select('*')
+      .eq('id', req.params.id)
+      .single();
+    if (fetchErr || !current) return res.status(404).json({ error: 'ক্যাটাগরি পাওয়া যায়নি' });
+    if (!isCatalogCategory(current.slug)) {
+      return res.status(400).json({ error: 'এই ক্যাটাগরি এডিট করা যাবে না' });
+    }
+
+    const nameEn = (b.name_en ?? current.name_en).trim();
+    let slug = (b.slug ?? current.slug).trim().toLowerCase();
+    if (!nameEn || !slug) return res.status(400).json({ error: 'নাম ও স্লাগ প্রয়োজন' });
+    if (slug === 'all' || !isCatalogCategory(slug)) {
+      return res.status(400).json({ error: 'এই স্লাগ ব্যবহার করা যাবে না' });
+    }
+
+    if (slug !== current.slug) {
+      const { data: dup } = await supabase
+        .from('categories')
+        .select('id')
+        .eq('slug', slug)
+        .neq('id', req.params.id)
+        .maybeSingle();
+      if (dup) return res.status(400).json({ error: 'স্লাগ ইতিমধ্যে আছে' });
+    }
+
+    const { data, error } = await supabase
+      .from('categories')
+      .update({
+        slug,
+        name_en: nameEn,
+        name_bn: (b.name_bn ?? current.name_bn)?.trim() || null,
+        icon: (b.icon ?? current.icon)?.trim() || '🖼️',
+        sort_order: Number(b.sort_order ?? current.sort_order ?? 0),
+        catalog_share:
+          b.catalog_share === '' || b.catalog_share == null
+            ? null
+            : Number(b.catalog_share),
+        hero_image_url:
+          b.hero_image_url !== undefined
+            ? (b.hero_image_url || '').trim() || null
+            : current.hero_image_url,
+      })
+      .eq('id', req.params.id)
+      .select()
+      .single();
+    if (error) throw error;
+    bustCatalog();
+    res.json({ ok: true, category: data });
+  } catch (err) {
+    res.status(400).json({ error: err.message });
+  }
+});
+
+api.delete('/categories/:id', async (req, res) => {
+  try {
+    const { data: current, error: fetchErr } = await supabase
+      .from('categories')
+      .select('slug')
+      .eq('id', req.params.id)
+      .single();
+    if (fetchErr || !current) return res.status(404).json({ error: 'ক্যাটাগরি পাওয়া যায়নি' });
+    if (!isCatalogCategory(current.slug)) {
+      return res.status(400).json({ error: 'এই ক্যাটাগরি ডিলিট করা যাবে না' });
+    }
+
+    const { count } = await supabase
+      .from('products')
+      .select('*', { count: 'exact', head: true })
+      .eq('category_id', req.params.id);
+    if (count > 0) {
+      return res.status(400).json({
+        error: `এই ক্যাটাগরিতে ${count}টি পণ্য আছে — আগে পণ্য সরান বা ডিলিট করুন`,
+      });
+    }
+
+    const { error } = await supabase.from('categories').delete().eq('id', req.params.id);
+    if (error) throw error;
+    bustCatalog();
+    res.json({ ok: true });
+  } catch (err) {
+    res.status(400).json({ error: err.message });
+  }
 });
 
 api.post('/products', async (req, res) => {
   try {
     const b = req.body;
+    const { images, image_url } = resolveProductImagesForDb(b);
+    const slug = await resolveProductSlugForDb(b);
+    const { sizes, price, original_price, stock } = resolveProductSizesForDb(b);
     const { data, error } = await supabase
       .from('products')
       .insert({
@@ -259,11 +435,14 @@ api.post('/products', async (req, res) => {
         description: b.description || null,
         category_id: b.category_id || null,
         icon: b.icon || '📦',
-        image_url: b.image_url || null,
-        price: Number(b.price),
-        original_price: Number(b.original_price || b.price),
-        stock: Number(b.stock || 100),
-        badge: b.badge || null,
+        slug,
+        image_url,
+        images,
+        sizes,
+        price,
+        original_price,
+        stock,
+        badge: b.badge || 'new',
         is_featured: b.is_featured !== false,
         is_flash_sale: !!b.is_flash_sale,
         rating: Number(b.rating || 4.5),
@@ -272,6 +451,7 @@ api.post('/products', async (req, res) => {
       .select()
       .single();
     if (error) throw error;
+    bustCatalog();
     res.json({ ok: true, product: data });
   } catch (err) {
     res.status(400).json({ error: err.message });
@@ -281,6 +461,9 @@ api.post('/products', async (req, res) => {
 api.put('/products/:id', async (req, res) => {
   try {
     const b = req.body;
+    const { images, image_url } = resolveProductImagesForDb(b);
+    const slug = await resolveProductSlugForDb(b, req.params.id);
+    const { sizes, price, original_price, stock } = resolveProductSizesForDb(b);
     const { data, error } = await supabase
       .from('products')
       .update({
@@ -289,10 +472,13 @@ api.put('/products/:id', async (req, res) => {
         description: b.description,
         category_id: b.category_id,
         icon: b.icon,
-        image_url: b.image_url,
-        price: Number(b.price),
-        original_price: Number(b.original_price),
-        stock: Number(b.stock),
+        slug,
+        image_url,
+        images,
+        sizes,
+        price,
+        original_price,
+        stock,
         badge: b.badge || null,
         is_featured: b.is_featured,
         is_flash_sale: b.is_flash_sale,
@@ -301,6 +487,7 @@ api.put('/products/:id', async (req, res) => {
       .select()
       .single();
     if (error) throw error;
+    bustCatalog();
     res.json({ ok: true, product: data });
   } catch (err) {
     res.status(400).json({ error: err.message });
@@ -311,16 +498,31 @@ api.delete('/products/:id', async (req, res) => {
   try {
     const { error } = await supabase.from('products').delete().eq('id', req.params.id);
     if (error) throw error;
+    bustCatalog();
     res.json({ ok: true });
   } catch (err) {
     res.status(400).json({ error: err.message });
   }
 });
 
-api.post('/upload', upload.single('image'), (req, res) => {
-  if (!req.file) return res.status(400).json({ error: 'No file uploaded' });
-  const url = `/uploads/products/${req.file.filename}`;
-  res.json({ ok: true, url });
+api.post('/upload', upload.single('image'), async (req, res) => {
+  try {
+    if (!req.file) return res.status(400).json({ error: 'No file uploaded' });
+    const result = await processProductUpload(req.file.path);
+    res.json({ ok: true, ...result });
+  } catch (err) {
+    res.status(400).json({ error: err.message || 'Image optimize failed' });
+  }
+});
+
+api.post('/upload/category-hero', uploadCategory.single('image'), async (req, res) => {
+  try {
+    if (!req.file) return res.status(400).json({ error: 'No file uploaded' });
+    const result = await processCategoryUpload(req.file.path);
+    res.json({ ok: true, ...result });
+  } catch (err) {
+    res.status(400).json({ error: err.message || 'Image optimize failed' });
+  }
 });
 
 api.get('/settings/payments', async (_req, res) => {
@@ -329,7 +531,7 @@ api.get('/settings/payments', async (_req, res) => {
     .select('value')
     .eq('key', 'payment_methods')
     .maybeSingle();
-  res.json({ payments: data?.value || {} });
+  res.json({ payments: mergePaymentSettings(data?.value || {}) });
 });
 
 api.put('/settings/payments', async (req, res) => {

@@ -2,9 +2,27 @@ const products = window.__PRODUCTS__ || [];
 let activeCategory = 'all';
 let paymentSettings = {};
 let selectedPayment = null;
+let checkoutTotal = 0;
 
 function formatBDT(n) {
   return `৳${Number(n || 0).toLocaleString('bn-BD', { maximumFractionDigits: 0 })}`;
+}
+
+const PRODUCT_TITLE_MAX = 30;
+
+function truncateTitle(text, max = PRODUCT_TITLE_MAX) {
+  const s = String(text || '').trim();
+  if (!s) return '';
+  if (s.length <= max) return s;
+  return `${s.slice(0, max).trimEnd()}...`;
+}
+
+function escapeHtml(str) {
+  return String(str || '')
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;');
 }
 
 async function api(path, options = {}) {
@@ -27,64 +45,307 @@ function badgeHtml(badge) {
 function productCardHtml(p) {
   const stars = '★'.repeat(Math.floor(p.rating)) + '☆'.repeat(5 - Math.floor(p.rating));
   return `
-    <a href="/product/${p.id}" class="product-card" data-product-id="${p.id}">
+    <a href="/product/${p.slug || p.id}" class="product-card" data-product-id="${p.id}">
       ${badgeHtml(p.badge)}
       <button type="button" class="product-fav" onclick="event.preventDefault(); event.stopPropagation(); toggleFav(this)">🤍</button>
-      <div class="product-img">${p.imageUrl ? `<img src="${p.imageUrl}" alt="" style="width:100%;height:100%;object-fit:cover;">` : p.icon}</div>
+      <div class="product-img">${p.imageUrl ? `<img src="${p.imageUrl}" alt="${(p.name || '').replace(/"/g, '&quot;')}">` : p.icon}</div>
       <div class="product-body">
         <div class="product-cat">${p.cat}</div>
-        <div class="product-name">${p.name}</div>
-        <div class="product-name-bn">${p.nameBn || ''}</div>
+        <div class="product-name" title="${escapeHtml(p.name)}">${escapeHtml(p.nameDisplay || truncateTitle(p.name))}</div>
+        ${p.nameBn || p.nameBnDisplay ? `<div class="product-name-bn" title="${escapeHtml(p.nameBn)}">${escapeHtml(p.nameBnDisplay || truncateTitle(p.nameBn))}</div>` : ''}
         <div class="product-rating">
           <span class="stars">${stars}</span>
           <span class="rating-count">${p.rating} (${(p.reviews || 0).toLocaleString()})</span>
         </div>
         <div class="product-price">
-          <span class="price-current">${formatBDT(p.price)}</span>
+          ${p.fromPrice ? '<span class="price-from">শুরু </span>' : ''}<span class="price-current">${formatBDT(p.price)}</span>
           ${p.original > p.price ? `<span class="price-original">${formatBDT(p.original)}</span><span class="price-save">সেভ ${formatBDT(p.original - p.price)}</span>` : ''}
         </div>
         <div class="product-footer">
-          <button type="button" class="btn-add-cart" onclick="event.preventDefault(); event.stopPropagation(); addToCart(${p.id})">🛒 কার্টে যোগ</button>
-          <button type="button" class="btn-buy-now" onclick="event.preventDefault(); event.stopPropagation(); buyNow(${p.id})">Buy Now</button>
+          <button type="button" class="btn-add-cart" onclick="event.preventDefault(); event.stopPropagation(); addToCart(${JSON.stringify(p.id)})">🛒 কার্টে যোগ</button>
+          <button type="button" class="btn-buy-now" onclick="event.preventDefault(); event.stopPropagation(); buyNow(${JSON.stringify(p.id)})">Buy Now</button>
         </div>
       </div>
     </a>`;
 }
 
-function renderProducts(list, containerId) {
-  const grid = document.getElementById(containerId);
-  if (!grid) return;
-  grid.innerHTML = list.map(productCardHtml).join('');
+const HOME_CATEGORY_SLUGS = [
+  'islamic-wall-art',
+  'family-photo-canvas',
+  'kids-room-art',
+  'office-motivational-art',
+];
+
+function carouselTrackItems(list) {
+  if (!list.length) return [];
+  if (list.length < 2) return list;
+  return list.concat(list);
 }
 
-async function filterCategory(slug) {
+function renderCategoryTrack(slug, list) {
+  const track = document.getElementById(`track-${slug}`);
+  if (!track) return;
+  const items = carouselTrackItems(list);
+  track.innerHTML = items.map(productCardHtml).join('');
+  track.style.transform = '';
+}
+
+function renderAllCategorySections(list) {
+  HOME_CATEGORY_SLUGS.forEach((slug) => {
+    renderCategoryTrack(
+      slug,
+      list.filter((p) => p.catSlug === slug)
+    );
+  });
+  initStoreCarousels();
+}
+
+function filterCategory(slug) {
+  if (!slug) return;
   activeCategory = slug;
   document.querySelectorAll('.cat-chip').forEach((c) => {
     c.classList.toggle('active', c.dataset.cat === slug);
   });
-  try {
-    const q = slug === 'all' ? '' : `?category=${encodeURIComponent(slug)}`;
-    const { products: list } = await api(`/products${q}`);
-    renderProducts(list, 'productGrid');
-    document.getElementById('products')?.scrollIntoView({ behavior: 'smooth' });
-  } catch (e) {
-    showToast(e.message, 'warning');
+  if (slug === 'all') {
+    document.getElementById('category-sections')?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    return;
+  }
+  const section = document.getElementById(`category-${slug}`);
+  if (section) {
+    section.scrollIntoView({ behavior: 'smooth', block: 'start' });
   }
 }
 
-document.querySelectorAll('.cat-chip').forEach((chip) => {
-  chip.addEventListener('click', (e) => {
-    e.preventDefault();
-    filterCategory(chip.dataset.cat);
-  });
-});
+function syncCategoryUrl(slug) {
+  if (typeof window === 'undefined') return;
+  const path = slug === 'all' ? '/' : `/category/${encodeURIComponent(slug)}`;
+  const current = window.location.pathname + window.location.search;
+  if (current !== path && (window.location.pathname === '/' || window.location.pathname === '')) {
+    window.history.replaceState(null, '', path);
+  }
+}
 
-document.querySelectorAll('[data-nav-cat]').forEach((link) => {
-  link.addEventListener('click', (e) => {
-    e.preventDefault();
-    filterCategory(link.dataset.navCat);
+function getCategorySlugFromUrl() {
+  const pathMatch = window.location.pathname.match(/^\/category\/([^/]+)/);
+  if (pathMatch) return decodeURIComponent(pathMatch[1]);
+  return new URLSearchParams(window.location.search).get('category');
+}
+
+function applyCategoryFromUrl() {
+  const urlCat = getCategorySlugFromUrl();
+  if (urlCat && urlCat !== 'all') {
+    filterCategory(urlCat);
+    return;
+  }
+  if (document.querySelector('.cat-chip[data-cat="all"]')) {
+    filterCategory('all');
+  }
+}
+
+function mountMobileMenu() {
+  const menu = document.getElementById('mobileMenu');
+  if (menu && menu.parentElement !== document.body) {
+    document.body.appendChild(menu);
+  }
+}
+
+function renderMobileMenuCategories(categories, activeNav) {
+  const el = document.getElementById('mobileMenuCategories');
+  if (!el) return;
+  const list = (categories || [])
+    .filter((c) => c.slug && c.slug !== 'all')
+    .sort((a, b) => (a.sort_order || 0) - (b.sort_order || 0));
+  if (!list.length) return;
+  const activeCat = activeNav || getCategorySlugFromUrl() || '';
+  el.innerHTML = list
+    .map((c) => {
+      const active = activeCat === c.slug ? ' is-active' : '';
+      const label = `${c.icon || '🖼️'} ${c.name_bn || c.name_en || c.slug}`;
+      return `<a href="/category/${encodeURIComponent(c.slug)}" class="mobile-menu-item${active}" data-cat="${c.slug}"><span class="mobile-menu-item-label">${label}</span></a>`;
+    })
+    .join('');
+}
+
+async function hydrateMobileMenuCategories(force = false) {
+  const el = document.getElementById('mobileMenuCategories');
+  if (!el) return;
+  if (!force && el.querySelector('.mobile-menu-item')) return;
+  try {
+    const { categories } = await api('/categories');
+    renderMobileMenuCategories(categories);
+  } catch {
+    if (!el.querySelector('.mobile-menu-item')) {
+      el.innerHTML = '<p class="mobile-menu-empty">ক্যাটাগরি লোড হয়নি</p>';
+    }
+  }
+}
+
+function closeNavMenu() {
+  const menu = document.getElementById('mobileMenu');
+  const toggle = document.getElementById('navMenuToggle');
+  document.body.classList.remove('mobile-menu-open');
+  if (menu) {
+    menu.classList.remove('is-open');
+    menu.setAttribute('aria-hidden', 'true');
+  }
+  if (toggle) toggle.setAttribute('aria-expanded', 'false');
+}
+
+async function openNavMenu() {
+  const menu = document.getElementById('mobileMenu');
+  const toggle = document.getElementById('navMenuToggle');
+  if (!menu) return;
+  await hydrateMobileMenuCategories(true);
+  menu.classList.add('is-open');
+  menu.setAttribute('aria-hidden', 'false');
+  document.body.classList.add('mobile-menu-open');
+  if (toggle) toggle.setAttribute('aria-expanded', 'true');
+}
+
+function bindNavMenu() {
+  if (window.__wnNavMenuBound) return;
+  if (!document.getElementById('navMenuToggle')) return;
+  window.__wnNavMenuBound = true;
+
+  document.addEventListener('click', (e) => {
+    const toggle = e.target.closest('#navMenuToggle');
+    if (toggle) {
+      e.preventDefault();
+      e.stopPropagation();
+      const menu = document.getElementById('mobileMenu');
+      if (menu?.classList.contains('is-open')) closeNavMenu();
+      else openNavMenu();
+      return;
+    }
+    if (e.target.closest('#navMenuClose') || e.target.closest('#mobileMenuOverlay')) {
+      e.preventDefault();
+      closeNavMenu();
+      return;
+    }
+    const item = e.target.closest('.mobile-menu-item');
+    if (item) {
+      closeNavMenu();
+      if (item.dataset?.cat) {
+        const onHome = window.location.pathname === '/' || window.location.pathname === '';
+        if (onHome) {
+          e.preventDefault();
+          filterCategory(item.dataset.cat);
+          syncCategoryUrl(item.dataset.cat);
+        }
+      }
+    }
   });
-});
+
+  document.addEventListener('keydown', (e) => {
+    if (e.key === 'Escape') closeNavMenu();
+  });
+}
+
+function bindCategoryNavigation() {
+  if (window.__wnCatNavBound) return;
+  window.__wnCatNavBound = true;
+
+  document.addEventListener('click', (e) => {
+    const chip = e.target.closest('.cat-chip');
+    if (chip?.dataset?.cat) {
+      e.preventDefault();
+      const slug = chip.dataset.cat;
+      filterCategory(slug);
+      syncCategoryUrl(slug);
+      return;
+    }
+    const navLink = e.target.closest('.nav-desktop .nav-link[data-cat]');
+    if (navLink?.dataset?.cat) {
+      const onHome = window.location.pathname === '/' || window.location.pathname === '';
+      if (onHome) {
+        e.preventDefault();
+        filterCategory(navLink.dataset.cat);
+        syncCategoryUrl(navLink.dataset.cat);
+      }
+    }
+  });
+}
+
+function refreshReviewSeeMore() {
+  document.querySelectorAll('.review-card').forEach((card) => {
+    const text = card.querySelector('.review-text');
+    const moreBtn = card.querySelector('.review-see-more');
+    const lessBtn = card.querySelector('.review-see-less');
+    if (!text || !moreBtn) return;
+    if (card.classList.contains('is-expanded')) return;
+
+    text.classList.add('is-clamped');
+    moreBtn.hidden = true;
+    if (lessBtn) lessBtn.hidden = true;
+
+    requestAnimationFrame(() => {
+      if (text.scrollHeight > text.clientHeight + 2) {
+        moreBtn.hidden = false;
+      }
+    });
+  });
+}
+
+function bindReviewSeeMore() {
+  if (window.__wnReviewSeeMoreBound) return;
+  window.__wnReviewSeeMoreBound = true;
+
+  document.addEventListener('click', (e) => {
+    const more = e.target.closest('.review-see-more');
+    if (more) {
+      e.preventDefault();
+      e.stopPropagation();
+      const card = more.closest('.review-card');
+      const text = card?.querySelector('.review-text');
+      const less = card?.querySelector('.review-see-less');
+      if (!card || !text) return;
+      card.classList.add('is-expanded');
+      text.classList.remove('is-clamped');
+      more.hidden = true;
+      if (less) less.hidden = false;
+      const block = document.getElementById('reviewsCarousel');
+      if (block?._carouselState) block._carouselState.paused = true;
+      return;
+    }
+    const less = e.target.closest('.review-see-less');
+    if (less) {
+      e.preventDefault();
+      e.stopPropagation();
+      const card = less.closest('.review-card');
+      const text = card?.querySelector('.review-text');
+      if (!card || !text) return;
+      card.classList.remove('is-expanded');
+      text.classList.add('is-clamped');
+      less.hidden = true;
+      refreshReviewSeeMore();
+      const block = document.getElementById('reviewsCarousel');
+      if (block?._carouselState) block._carouselState.paused = false;
+    }
+  });
+
+  window.addEventListener('resize', () => {
+    requestAnimationFrame(refreshReviewSeeMore);
+  });
+}
+
+function bootHomePage() {
+  bindNavMenu();
+  bindCategoryNavigation();
+  applyCategoryFromUrl();
+  initStoreCarousels();
+  refreshReviewSeeMore();
+}
+
+mountMobileMenu();
+hydrateMobileMenuCategories();
+bindNavMenu();
+bindCategoryNavigation();
+bindReviewSeeMore();
+if (document.readyState === 'loading') {
+  document.addEventListener('DOMContentLoaded', refreshReviewSeeMore);
+} else {
+  refreshReviewSeeMore();
+}
 
 async function handleSearch() {
   const q = document.getElementById('searchInput').value.trim();
@@ -93,8 +354,8 @@ async function handleSearch() {
     if (q) params.set('q', q);
     if (activeCategory && activeCategory !== 'all') params.set('category', activeCategory);
     const { products: list } = await api(`/products?${params}`);
-    renderProducts(list.length ? list : products, 'productGrid');
-    document.getElementById('products')?.scrollIntoView({ behavior: 'smooth' });
+    renderAllCategorySections(list.length ? list : products);
+    document.getElementById('category-sections')?.scrollIntoView({ behavior: 'smooth' });
     if (q && !list.length) showToast('কোনো পণ্য পাওয়া যায়নি।', 'warning');
   } catch (e) {
     showToast(e.message, 'warning');
@@ -135,38 +396,57 @@ async function refreshCart() {
   }
 }
 
-function renderCartItems(items, subtotal = 0) {
+function cartLineSubtotal(items, subtotal) {
+  const computed = items.reduce((sum, item) => sum + item.price * item.qty, 0);
+  return typeof subtotal === 'number' ? subtotal : computed;
+}
+
+function renderCartItems(items, subtotal) {
   const container = document.getElementById('cartItems');
   const footer = document.getElementById('cartFooter');
+  const headerCount = document.getElementById('cartHeaderCount');
+  const itemCount = items.reduce((sum, item) => sum + item.qty, 0);
   if (!items.length) {
-    container.innerHTML = `<div class="cart-empty"><div class="ce-icon">🛒</div><p>কার্ট খালি আছে</p><p style="font-size:13px;margin-top:4px;">Your cart is empty</p></div>`;
+    container.innerHTML = `<div class="cart-empty"><div class="ce-icon">🛒</div><p>কার্ট খালি আছে</p><p class="cart-empty-sub">পছন্দের পণ্য কার্টে যোগ করুন</p></div>`;
     footer.style.display = 'none';
+    if (headerCount) headerCount.textContent = '';
     return;
   }
   footer.style.display = 'block';
-  const shipping = subtotal >= 1500 ? 0 : 80;
+  const lineSubtotal = cartLineSubtotal(items, subtotal);
+  const shipping = lineSubtotal >= 1500 ? 0 : 80;
+  checkoutTotal = lineSubtotal + shipping;
+  if (headerCount) {
+    headerCount.textContent = `${itemCount} আইটেম`;
+  }
   container.innerHTML = items
     .map(
       (item) => `
     <div class="cart-item">
-      <div class="cart-item-img">${item.imageUrl ? `<img src="${item.imageUrl}" style="width:100%;height:100%;object-fit:cover;border-radius:8px;">` : item.icon}</div>
-      <div class="cart-item-info">
-        <div class="cart-item-name">${item.name}</div>
-        <div class="cart-item-price">${formatBDT(item.price * item.qty)}</div>
+      <div class="cart-item-img">${item.imageUrl ? `<img src="${item.imageUrl}" alt="">` : item.icon}</div>
+      <div class="cart-item-body">
+        <div class="cart-item-top">
+          <div class="cart-item-name" title="${escapeHtml(item.displayName || item.name)}">${escapeHtml(truncateTitle(item.displayName || item.name))}</div>
+          <button class="cart-item-remove" type="button" aria-label="সরান" onclick="removeFromCart('${item.cartItemId}')">✕</button>
+        </div>
+        <div class="cart-item-meta">
+          <span class="cart-item-unit">${formatBDT(item.price)} × ${item.qty}</span>
+          <span class="cart-item-price">${formatBDT(item.price * item.qty)}</span>
+        </div>
         <div class="cart-item-qty">
-          <button class="qty-btn" type="button" onclick="changeQty('${item.cartItemId}', -1)">−</button>
+          <button class="qty-btn" type="button" aria-label="কমান" onclick="changeQty('${item.cartItemId}', -1)">−</button>
           <span class="qty-num">${item.qty}</span>
-          <button class="qty-btn" type="button" onclick="changeQty('${item.cartItemId}', 1)">+</button>
+          <button class="qty-btn" type="button" aria-label="বাড়ান" onclick="changeQty('${item.cartItemId}', 1)">+</button>
         </div>
       </div>
-      <button class="cart-item-remove" type="button" onclick="removeFromCart('${item.cartItemId}')">🗑️</button>
     </div>`
     )
     .join('');
-  document.getElementById('cartSubtotal').textContent = formatBDT(subtotal);
-  document.getElementById('cartShipping').textContent =
-    shipping === 0 ? 'FREE' : formatBDT(shipping);
-  document.getElementById('cartTotal').textContent = formatBDT(subtotal + shipping);
+  document.getElementById('cartSubtotal').textContent = formatBDT(lineSubtotal);
+  const shippingEl = document.getElementById('cartShipping');
+  shippingEl.textContent = shipping === 0 ? 'ফ্রি' : formatBDT(shipping);
+  shippingEl.classList.toggle('is-free', shipping === 0);
+  document.getElementById('cartTotal').textContent = formatBDT(checkoutTotal);
 }
 
 async function loadPaymentMethods() {
@@ -204,19 +484,47 @@ function selectPayment(key) {
   const p = paymentSettings[key];
   const el = document.getElementById('paymentDetails');
   if (!el || !p) return;
+  const amount = checkoutTotal > 0 ? checkoutTotal : 0;
   el.style.display = 'block';
   el.innerHTML = `
     <strong>${p.label || key}</strong> — ${p.account_type || 'Personal'}<br>
-    নম্বর: <strong style="font-size:16px;color:var(--primary);">${p.number || 'অ্যাডমিনে সেট করুন'}</strong><br>
-    <span style="color:var(--text-muted);">${p.instructions || ''}</span>
+    নম্বর: <strong style="font-size:16px;color:var(--primary);">${p.number || 'অ্যাডমিনে সেট করুন'}</strong>
+    <div style="margin:10px 0 8px;padding:12px;background:#fff;border-radius:8px;border:1px solid rgba(0,113,206,.18);">
+      <div style="font-size:12px;color:var(--text-muted);margin-bottom:4px;">Send Money করুন (ঠিক এই পরিমাণ)</div>
+      <strong style="font-size:22px;color:var(--primary);letter-spacing:.02em;">${formatBDT(amount)}</strong>
+    </div>
+    <span style="color:var(--text-muted);">${p.instructions || 'উপরের নম্বরে ঠিক এই টাকা পাঠান, তারপর Transaction ID দিন।'}</span>
   `;
 }
 
 async function openCheckout() {
+  await refreshCart();
   await loadPaymentMethods();
   selectedPayment = null;
   document.getElementById('paymentDetails').style.display = 'none';
   renderPaymentOptions();
+
+  const emailGroup = document.getElementById('checkoutEmailGroup');
+  const emailInput = document.getElementById('checkoutEmail');
+  try {
+    const nav = await fetch('/api/nav-context', { credentials: 'same-origin' }).then((r) =>
+      r.ok ? r.json() : {}
+    );
+    if (nav.user?.email) {
+      if (emailGroup) emailGroup.style.display = 'none';
+      if (emailInput) {
+        emailInput.required = false;
+        emailInput.value = '';
+      }
+    } else {
+      if (emailGroup) emailGroup.style.display = '';
+      if (emailInput) emailInput.required = true;
+    }
+  } catch {
+    if (emailGroup) emailGroup.style.display = '';
+    if (emailInput) emailInput.required = true;
+  }
+
   openModal('checkoutModal');
 }
 
@@ -236,7 +544,7 @@ async function changeQty(cartItemId, delta) {
 async function removeFromCart(cartItemId) {
   try {
     const data = await api(`/cart/${cartItemId}`, { method: 'DELETE' });
-    renderCartItems(data.items, 0);
+    renderCartItems(data.items, data.subtotal);
     document.getElementById('cartCount').textContent = data.count;
   } catch (e) {
     showToast(e.message, 'warning');
@@ -334,7 +642,10 @@ async function placeOrder(e) {
     });
     closeModal('checkoutModal');
     await refreshCart();
-    showToast(`🎉 অর্ডার জমা হয়েছে! ${data.orderNumber} — পেমেন্ট যাচাই হচ্ছে`);
+    showToast(`🎉 অর্ডার ${data.orderNumber} জমা হয়েছে! পেমেন্ট যাচাই হচ্ছে`);
+    setTimeout(() => {
+      window.location.href = `/track-order?order=${encodeURIComponent(data.orderNumber)}`;
+    }, 1200);
   } catch (err) {
     showToast(err.message, 'warning');
   }
@@ -432,9 +743,134 @@ function updateCountdown() {
 setInterval(updateCountdown, 1000);
 updateCountdown();
 
+const productCarousels = [];
+
+function initCarousel({ blockId, trackId, cardSelector = '.product-card', intervalMs = 4000 }) {
+  const block = document.getElementById(blockId);
+  const track = document.getElementById(trackId);
+  if (!block || !track) return null;
+
+  const cards = track.querySelectorAll(cardSelector);
+  const half = Math.floor(cards.length / 2);
+  if (half < 2) return null;
+
+  const state = { index: 0, paused: false, timer: null };
+
+  function stepWidth() {
+    const card = cards[0];
+    if (!card) return 0;
+    const gap = parseFloat(getComputedStyle(track).gap) || 16;
+    return card.offsetWidth + gap;
+  }
+
+  function go(i, animate) {
+    track.style.transition = animate ? 'transform 0.55s ease-in-out' : 'none';
+    track.style.transform = `translate3d(-${i * stepWidth()}px, 0, 0)`;
+  }
+
+  function tick() {
+    if (state.paused) return;
+    state.index += 1;
+    go(state.index, true);
+    if (state.index >= half) {
+      setTimeout(() => {
+        state.index = 0;
+        go(0, false);
+      }, 580);
+    }
+  }
+
+  function start() {
+    if (state.timer) clearInterval(state.timer);
+    state.timer = setInterval(tick, intervalMs);
+  }
+
+  function stop() {
+    if (state.timer) clearInterval(state.timer);
+    state.timer = null;
+  }
+
+  if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) {
+    track.style.transform = '';
+    return { stop };
+  }
+
+  go(0, false);
+  start();
+
+  block._carouselState = state;
+
+  if (!block.dataset.carouselBound) {
+    block.dataset.carouselBound = '1';
+    block.addEventListener('mouseenter', () => {
+      if (block._carouselState) block._carouselState.paused = true;
+    });
+    block.addEventListener('mouseleave', () => {
+      if (block._carouselState) block._carouselState.paused = false;
+    });
+    window.addEventListener('resize', () => {
+      const s = block._carouselState;
+      if (s) go(s.index, false);
+    });
+  }
+
+  return { stop, start };
+}
+
+function initProductCarousel(opts) {
+  return initCarousel({ ...opts, cardSelector: '.product-card' });
+}
+
+function initStoreCarousels() {
+  productCarousels.forEach((c) => c?.stop?.());
+  productCarousels.length = 0;
+  const flash = initProductCarousel({
+    blockId: 'flashCarousel',
+    trackId: 'flashProducts',
+    intervalMs: 4000,
+  });
+  const arrivals = initProductCarousel({
+    blockId: 'newArrivalsCarousel',
+    trackId: 'newArrivalsTrack',
+    intervalMs: 4000,
+  });
+  const reviews = initCarousel({
+    blockId: 'reviewsCarousel',
+    trackId: 'reviewsTrack',
+    cardSelector: '.review-card',
+    intervalMs: 5000,
+  });
+  document.querySelectorAll('[data-category-carousel]').forEach((block) => {
+    const slug = block.id.replace(/^carousel-/, '');
+    const c = initProductCarousel({
+      blockId: block.id,
+      trackId: `track-${slug}`,
+      intervalMs: 4000,
+    });
+    if (c) productCarousels.push(c);
+  });
+  if (flash) productCarousels.push(flash);
+  if (arrivals) productCarousels.push(arrivals);
+  if (reviews) productCarousels.push(reviews);
+}
+
+function bootStoreCarousels() {
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', bootHomePage);
+  } else {
+    bootHomePage();
+  }
+  document.addEventListener('wn:fast-page', () => {
+    requestAnimationFrame(bootHomePage);
+  });
+}
+
+bootStoreCarousels();
+
 refreshCart();
 loadPaymentMethods();
 
 if (new URLSearchParams(location.search).get('login') === '1') {
   openModal('loginModal');
 }
+

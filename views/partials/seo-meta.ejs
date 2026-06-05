@@ -1,0 +1,27 @@
+<% if (seo) { %>
+<title><%= seo.title %></title>
+<% if (seo.description) { %><meta name="description" content="<%= seo.description %>"><% } %>
+<% if (seo.robots) { %><meta name="robots" content="<%= seo.robots %>"><% } %>
+<% if (seo.canonical) { %><link rel="canonical" href="<%= seo.canonical %>"><% } %>
+<% if (seo.prev) { %><link rel="prev" href="<%= seo.prev %>"><% } %>
+<% if (seo.next) { %><link rel="next" href="<%= seo.next %>"><% } %>
+<meta property="og:site_name" content="WallNest BD">
+<meta property="og:locale" content="bn_BD">
+<meta property="og:type" content="<%= seo.ogType || 'website' %>">
+<meta property="og:title" content="<%= seo.title %>">
+<% if (seo.description) { %><meta property="og:description" content="<%= seo.description %>"><% } %>
+<% if (seo.canonical) { %><meta property="og:url" content="<%= seo.canonical %>"><% } %>
+<% if (seo.ogImage) { %>
+<% var ogImageUrl = seo.ogImage; if (typeof siteUrl !== 'undefined' && siteUrl && ogImageUrl && !String(ogImageUrl).startsWith('http')) { ogImageUrl = siteUrl + ogImageUrl; } %>
+<meta property="og:image" content="<%= ogImageUrl %>">
+<% if (ogImageUrl) { %><meta name="twitter:image" content="<%= ogImageUrl %>"><% } %>
+<% } %>
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:title" content="<%= seo.title %>">
+<% if (seo.description) { %><meta name="twitter:description" content="<%= seo.description %>"><% } %>
+<% if (seo.jsonLd && seo.jsonLd.length) { %>
+<% seo.jsonLd.forEach(function(block) { %>
+<script type="application/ld+json"><%- JSON.stringify(block) %></script>
+<% }); %>
+<% } %>
+<% } %>

@@ -4,9 +4,10 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <%- include('partials/favicon') %>
-<title>WallNest BD - Online Store</title>
+<%- include('partials/seo-meta', { seo: typeof seo !== 'undefined' ? seo : null, siteUrl: typeof siteUrl !== 'undefined' ? siteUrl : '' }) %>
+<% if (typeof seo === 'undefined' || !seo) { %><title>WallNest BD - Online Store</title><% } %>
 <link href="https://fonts.googleapis.com/css2?family=Hind+Siliguri:wght@300;400;500;600;700&family=DM+Sans:wght@300;400;500;600;700&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="/css/style.css">
+<link rel="stylesheet" href="/css/style.css?v=37">
 </head>
 <body>
 
@@ -17,35 +18,26 @@
     <div>
       <div class="banner-tag">🖼️ Beautiful Walls, Better Living</div>
       <h1>ওয়াল আর্ট ও <span>ক্যানভাস</span> — WallNest BD</h1>
-      <p>ইসলামিক আর্ট, ফ্যামিলি ফটো ক্যানভাস, কিডস রুম, অফিস ও অ্যাবস্ট্র্যাক্ট — বাংলাদেশে ডেলিভারি।</p>
+      <p>ইসলামিক আর্ট, ফ্যামিলি ফটো ক্যানভাস, কিডস রুম ও অফিস মোটিভেশনাল — বাংলাদেশে ডেলিভারি।</p>
       <div class="hero-btns">
         <a href="#products" class="btn-primary">🛍️ এখনই কিনুন / Shop Now</a>
-        <button class="btn-outline" type="button" onclick="openModal('loginModal')">📦 অর্ডার ট্র্যাক করুন</button>
+        <a href="/track-order" class="btn-outline">📦 অর্ডার ট্র্যাক করুন</a>
       </div>
       <div class="hero-stats">
-        <div class="stat"><div class="stat-num">5</div><div class="stat-label">ক্যাটাগরি / Categories</div></div>
+        <div class="stat"><div class="stat-num">4</div><div class="stat-label">ক্যাটাগরি / Categories</div></div>
         <div class="stat"><div class="stat-num">20+</div><div class="stat-label">ওয়াল আর্ট / Designs</div></div>
         <div class="stat"><div class="stat-num">4.8★</div><div class="stat-label">রেটিং / Rating</div></div>
         <div class="stat"><div class="stat-num">3-5d</div><div class="stat-label">প্রিন্ট ও ডেলিভারি</div></div>
       </div>
     </div>
     <div class="hero-visual">
-      <a href="/?category=islamic-wall-art" class="hero-card">
-        <img src="/images/hero/islamic-wall-art.jpg" alt="Islamic Wall Art" class="hero-card-img" fetchpriority="high" decoding="async">
-        <span class="hero-card-label">Islamic Wall Art</span>
+      <% const heroCards = (categories || []).filter(function(c) { return c.slug && c.slug !== 'all'; }).sort(function(a, b) { return (a.sort_order || 0) - (b.sort_order || 0); }).slice(0, 4); %>
+      <% heroCards.forEach(function(c, i) { %>
+      <a href="/category/<%= c.slug %>" class="hero-card">
+        <img src="<%= c.heroImageUrl || c.hero_image_url %>" alt="<%= c.name_bn || c.name_en %>" class="hero-card-img" <%= i === 0 ? 'fetchpriority="high" decoding="async"' : 'loading="lazy"' %>>
+        <span class="hero-card-label"><%= c.name_bn || c.name_en %></span>
       </a>
-      <a href="/?category=family-photo-canvas" class="hero-card">
-        <img src="/images/hero/family-photo-canvas.jpg" alt="Family Photo Canvas" class="hero-card-img" loading="lazy">
-        <span class="hero-card-label">Family Photo Canvas</span>
-      </a>
-      <a href="/?category=kids-room-art" class="hero-card">
-        <img src="/images/hero/kids-room-art.jpg" alt="Kids Room Art" class="hero-card-img" loading="lazy">
-        <span class="hero-card-label">Kids Room Art</span>
-      </a>
-      <a href="/?category=abstract-wall-art" class="hero-card">
-        <img src="/images/hero/abstract-office.jpg" alt="Abstract & Office" class="hero-card-img" loading="lazy">
-        <span class="hero-card-label">Abstract & Office</span>
-      </a>
+      <% }); %>
     </div>
   </div>
 </section>
@@ -54,7 +46,7 @@
   <div class="site-wrap">
   <div class="cat-grid" id="catGrid">
     <% categories.forEach(function(c, i) { %>
-      <a href="#" class="cat-chip <%= i === 0 ? 'active' : '' %>" data-cat="<%= c.slug %>">
+      <a href="<%= c.slug === 'all' ? '/' : '/category/' + encodeURIComponent(c.slug) %>" class="cat-chip <%= i === 0 ? 'active' : '' %>" data-cat="<%= c.slug %>">
         <div class="cat-icon"><%= c.icon %></div>
         <span><%= c.name_bn || c.name_en %></span>
       </a>
@@ -84,7 +76,7 @@
       <div class="banner-small b1">
         <h3>নতুন আরাইভাল 🆕</h3>
         <p>সর্বশেষ প্রোডাক্ট দেখুন</p>
-        <button class="btn-sm" type="button">Explore →</button>
+        <a href="/new-arrivals" class="btn-sm" style="display:inline-block;text-align:center;text-decoration:none;">View All →</a>
         <div class="big-icon">✨</div>
       </div>
       <div class="banner-small b2">
@@ -107,44 +99,78 @@
         <div class="countdown-block"><span class="countdown-num" id="seconds">00</span><span class="countdown-label">সেকেন্ড</span></div>
       </div>
     </div>
-    <div class="flash-products" id="flashProducts">
-      <% flashProducts.forEach(function(p) { %>
-        <%- include('partials/product-card', { p: p }) %>
-      <% }); %>
+    <div class="flash-carousel" id="flashCarousel">
+      <div class="flash-carousel-viewport" id="flashCarouselViewport" aria-label="Flash sale products">
+        <div class="flash-products" id="flashProducts">
+          <% flashProducts.forEach(function(p) { %>
+            <%- include('partials/product-card', { p: p }) %>
+          <% }); %>
+          <% if (flashProducts.length >= 2) { flashProducts.forEach(function(p) { %>
+            <%- include('partials/product-card', { p: p }) %>
+          <% }); } %>
+        </div>
+      </div>
     </div>
   </div>
 
-  <div class="section" id="products">
+  <div class="section new-arrivals-block" id="new-arrivals">
     <div class="section-header">
-      <div class="section-title">🖼️ ওয়াল আর্ট কালেকশন / <span>Wall Art Collection</span></div>
-      <a href="#" class="see-all" onclick="filterCategory('all'); return false;">সব দেখুন →</a>
+      <div class="section-title">🆕 নতুন আরাইভাল / <span>New Arrival</span></div>
+      <% if (newArrivalProducts && newArrivalProducts.length) { %>
+      <a href="/new-arrivals" class="see-all">View All →</a>
+      <% } %>
     </div>
-    <div class="product-grid" id="productGrid">
-      <% products.forEach(function(p) { %>
-        <%- include('partials/product-card', { p: p }) %>
-      <% }); %>
+    <% if (newArrivalProducts && newArrivalProducts.length) { %>
+    <div class="new-arrivals-carousel" id="newArrivalsCarousel">
+      <div class="new-arrivals-carousel-viewport" id="newArrivalsCarouselViewport" aria-label="New arrival products">
+        <div class="new-arrivals-track" id="newArrivalsTrack">
+          <% newArrivalProducts.forEach(function(p) { %>
+            <%- include('partials/product-card', { p: p }) %>
+          <% }); %>
+          <% if (newArrivalProducts.length >= 2) { newArrivalProducts.forEach(function(p) { %>
+            <%- include('partials/product-card', { p: p }) %>
+          <% }); } %>
+        </div>
+      </div>
     </div>
+    <% } else { %>
+    <div class="new-arrivals-empty">
+      <p>এখনো নতুন পণ্য নেই। অ্যাডমিন প্যানেল থেকে <strong>+ নতুন পণ্য</strong> যোগ করুন।</p>
+    </div>
+    <% } %>
   </div>
 
-  <div class="section">
+  <div id="category-sections">
+    <% (categorySections || []).forEach(function(sec) { %>
+      <%- include('partials/category-section', { sec: sec }) %>
+    <% }); %>
+  </div>
+
+  <div class="section" id="customer-reviews">
     <div class="section-header">
       <div class="section-title">💬 গ্রাহকের মতামত / <span>Customer Reviews</span></div>
+      <% if (reviews && reviews.length) { %>
+      <a href="/reviews" class="see-all">View All →</a>
+      <% } %>
     </div>
-    <div class="review-grid">
-      <% reviews.forEach(function(r, i) { %>
-        <div class="review-card">
-          <div class="review-top">
-            <div class="reviewer-avatar" style="<%= i === 1 ? 'background:linear-gradient(135deg,#10B981,#059669)' : i === 2 ? 'background:linear-gradient(135deg,#8B5CF6,#6D28D9)' : '' %>"><%= (r.reviewer_name || '?').slice(0,2) %></div>
-            <div>
-              <div class="reviewer-name"><%= r.reviewer_name %></div>
-              <div class="stars"><%= '★'.repeat(r.rating) %><%= '☆'.repeat(5 - r.rating) %></div>
-            </div>
-          </div>
-          <div class="review-text">"<%= r.comment %>"</div>
-          <% if (r.is_verified) { %><div class="verified-badge">✅ Verified Purchase</div><% } %>
+    <% if (reviews && reviews.length) { %>
+    <div class="reviews-carousel" id="reviewsCarousel">
+      <div class="reviews-carousel-viewport" id="reviewsCarouselViewport" aria-label="Customer reviews">
+        <div class="reviews-track" id="reviewsTrack">
+          <% reviews.forEach(function(r, i) { %>
+            <%- include('partials/review-card', { r: r, i: i }) %>
+          <% }); %>
+          <% if (reviews.length > 4) { reviews.forEach(function(r, i) { %>
+            <%- include('partials/review-card', { r: r, i: i }) %>
+          <% }); } %>
         </div>
-      <% }); %>
+      </div>
     </div>
+    <% } else { %>
+    <div class="new-arrivals-empty">
+      <p>এখনো কোনো রিভিউ নেই।</p>
+    </div>
+    <% } %>
   </div>
 </div>
 
