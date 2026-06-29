@@ -22,6 +22,7 @@ if (typeof window !== 'undefined' && typeof window.bootAdminPage !== 'function')
 
 async function adminApi(path, options = {}) {
   const res = await fetch(`/api/admin${path}`, {
+    credentials: 'same-origin',
     headers: { 'Content-Type': 'application/json', ...options.headers },
     ...options,
   });
@@ -128,10 +129,14 @@ function runAdminPageInit(fn) {
  * and call this so `let`/`const` are not redeclared and listeners stay single.
  */
 function bootAdminPage(moduleId, initFn) {
-  const key = `__wnAdminBoot_${moduleId}`;
-  if (!window[key]) {
-    window[key] = true;
-    document.addEventListener('wn:admin-main', () => runAdminPageInit(initFn));
+  const initKey = `__wnAdminInit_${moduleId}`;
+  const bootKey = `__wnAdminBoot_${moduleId}`;
+  window[initKey] = initFn;
+  if (!window[bootKey]) {
+    window[bootKey] = true;
+    document.addEventListener('wn:admin-main', () => {
+      if (typeof window[initKey] === 'function') runAdminPageInit(window[initKey]);
+    });
   }
   runAdminPageInit(initFn);
 }

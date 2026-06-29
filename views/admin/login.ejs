@@ -26,5 +26,12 @@
     <button class="btn-block" type="submit">লগইন</button>
   </form>
 </div>
+<script>
+  try {
+    Object.keys(sessionStorage)
+      .filter((k) => k.startsWith('wn_admin_'))
+      .forEach((k) => sessionStorage.removeItem(k));
+  } catch (_) {}
+</script>
 </body>
 </html>

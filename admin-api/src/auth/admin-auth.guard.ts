@@ -6,19 +6,9 @@ import {
 } from '@nestjs/common';
 import { getIronSession } from 'iron-session';
 
-const sessionOptions = {
-  password:
-    process.env.SESSION_SECRET ||
-    'wallnest-dev-secret-min-32-characters-long',
-  cookieName: 'wn_session',
-  cookieOptions: {
-    secure: process.env.NODE_ENV === 'production',
-    httpOnly: true,
-    sameSite: 'lax' as const,
-    maxAge: 7 * 24 * 60 * 60,
-    path: '/',
-  },
-};
+// Keep in sync with lib/session.js (Next.js login + admin pages).
+// eslint-disable-next-line @typescript-eslint/no-var-requires
+const { sessionOptions } = require('../../../lib/session');
 
 @Injectable()
 export class AdminAuthGuard implements CanActivate {

@@ -9,13 +9,13 @@ function adminCommonReady() {
 }
 
 /** Load admin page scripts with cache-bust so inits re-run after client-side nav. */
-export default function AdminScripts({ scriptSrcs = [] }) {
+export default function AdminScripts({ scriptSrcs = [], reloadToken = 0 }) {
   const ordered = useMemo(
     () => (scriptSrcs || []).filter((s) => s !== ADMIN_COMMON),
     [scriptSrcs]
   );
 
-  const loadKey = ordered.join('|');
+  const loadKey = `${reloadToken}|${ordered.join('|')}`;
   const [commonReady, setCommonReady] = useState(adminCommonReady);
 
   useEffect(() => {

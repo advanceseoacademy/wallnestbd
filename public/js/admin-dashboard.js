@@ -52,28 +52,31 @@ function renderTopProducts(list) {
 
 async function init() {
   if (!document.getElementById('statRevenue')) return;
-  const data = await adminApi('/stats');
-  const rev = document.getElementById('statRevenue');
-  if (rev) rev.textContent = formatBDT(data.revenue);
-  const ord = document.getElementById('statOrders');
-  if (ord) ord.textContent = formatStatNum(data.orderCount);
-  const today = document.getElementById('statToday');
-  if (today) today.textContent = `আজ: ${formatStatNum(data.todayOrders)}`;
-  const prod = document.getElementById('statProducts');
-  if (prod) prod.textContent = formatStatNum(data.productCount);
-  const pend = document.getElementById('statPending');
-  if (pend) pend.textContent = formatStatNum(data.pendingPayments);
+  const catEl = document.getElementById('categoryLegend');
+  try {
+    const data = await adminApi('/stats');
+    const rev = document.getElementById('statRevenue');
+    if (rev) rev.textContent = formatBDT(data.revenue);
+    const ord = document.getElementById('statOrders');
+    if (ord) ord.textContent = formatStatNum(data.orderCount);
+    const today = document.getElementById('statToday');
+    if (today) today.textContent = `আজ: ${formatStatNum(data.todayOrders)}`;
+    const prod = document.getElementById('statProducts');
+    if (prod) prod.textContent = formatStatNum(data.productCount);
+    const pend = document.getElementById('statPending');
+    if (pend) pend.textContent = formatStatNum(data.pendingPayments);
 
-  renderChart(data.chart);
-  renderTopProducts(data.topProducts);
+    renderChart(data.chart);
+    renderTopProducts(data.topProducts);
+    renderCatalogCategories(data.categories || []);
 
-  const orders = await adminApi('/orders');
-  const tbody = document.getElementById('ordersTableBody');
-  if (!tbody) return;
-  tbody.innerHTML = (orders.orders || [])
-    .slice(0, 6)
-    .map(
-      (o) => `
+    const orders = await adminApi('/orders');
+    const tbody = document.getElementById('ordersTableBody');
+    if (tbody) {
+      tbody.innerHTML = (orders.orders || [])
+        .slice(0, 6)
+        .map(
+          (o) => `
     <tr>
       <td><span class="order-id">${o.orderNumber || o.id.slice(0, 8)}</span></td>
       <td>${o.customer}</td>
@@ -81,10 +84,15 @@ async function init() {
       <td>${paymentStatusBadge(o.paymentStatus)}</td>
       <td class="amount-cell">${formatBDT(o.total)}</td>
     </tr>`
-    )
-    .join('');
-
-  renderCatalogCategories(data.categories || []);
+        )
+        .join('');
+    }
+  } catch (err) {
+    console.error(err);
+    if (catEl) {
+      catEl.innerHTML = `<p style="color:#dc2626;font-size:13px;">${err.message || 'ড্যাশবোর্ড লোড ব্যর্থ'} — <a href="/admin/login" style="color:var(--primary)">আবার লগইন করুন</a></p>`;
+    }
+  }
 }
 
 const CATALOG_COLORS = ['#0071CE', '#FFC220', '#10B981', '#004F93', '#00A3E0'];

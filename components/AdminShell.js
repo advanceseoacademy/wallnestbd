@@ -4,7 +4,7 @@ import { useCallback, useEffect, useLayoutEffect, useRef, useState } from 'react
 import { useRouter } from 'next/router';
 import AdminScripts from './AdminScripts';
 
-const CACHE_PREFIX = 'wn_admin_v3:';
+const CACHE_PREFIX = 'wn_admin_v4:';
 const CACHE_TTL_MS = 5 * 60 * 1000;
 
 const ADMIN_PATHS = new Set([
@@ -75,6 +75,7 @@ export default function AdminShell({
   const routeKey = adminPath || page;
   const [main, setMain] = useState(mainHtml);
   const [scripts, setScripts] = useState(scriptSrcs || []);
+  const [reloadToken, setReloadToken] = useState(0);
   const [navigating, setNavigating] = useState(false);
   const skipRouteLoadRef = useRef(false);
   const ssrSyncedRef = useRef(false);
@@ -82,6 +83,7 @@ export default function AdminShell({
   const applyPage = useCallback((data) => {
     setMain(data.mainHtml);
     setScripts(data.scriptSrcs || []);
+    setReloadToken((n) => n + 1);
     updateSidebarActive(data.adminPath || data.page);
   }, []);
 
@@ -242,7 +244,7 @@ export default function AdminShell({
         suppressHydrationWarning
         dangerouslySetInnerHTML={{ __html: main || '' }}
       />
-      <AdminScripts scriptSrcs={scripts} />
+      <AdminScripts scriptSrcs={scripts} reloadToken={reloadToken} />
     </div>
   );
 }

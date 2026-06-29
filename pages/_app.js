@@ -72,7 +72,7 @@ export default function App({ Component, pageProps }) {
       ) : null}
       {showFastNav ? <FastNav /> : null}
       {isAdmin ? (
-        <Script src="/js/admin-common.js" strategy="beforeInteractive" />
+        <Script src="/js/admin-common.js?v=9" strategy="beforeInteractive" />
       ) : null}
       {isAdmin ? (
         <>
