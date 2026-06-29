@@ -5,8 +5,14 @@ async function uploadHeroImage(file) {
   const fd = new FormData();
   fd.append('image', file);
   const res = await fetch('/api/admin/upload/category-hero', { method: 'POST', body: fd });
-  const data = await res.json();
-  if (!res.ok) throw new Error(data.error || 'আপলোড ব্যর্থ');
+  const data = await res.json().catch(() => ({}));
+  if (!res.ok) {
+    throw new Error(
+      typeof adminUploadError === 'function'
+        ? adminUploadError(data, 'আপলোড ব্যর্থ')
+        : data.error || data.message || 'আপলোড ব্যর্থ'
+    );
+  }
   return data;
 }
 

@@ -14,19 +14,18 @@ import {
 } from '@nestjs/common';
 import { FileInterceptor } from '@nestjs/platform-express';
 import { diskStorage } from 'multer';
-import { extname, join } from 'path';
+import { extname } from 'path';
 import { v4 as uuidv4 } from 'uuid';
 import { AdminAuthGuard } from '../auth/admin-auth.guard';
 
-// eslint-disable-next-line @typescript-eslint/no-var-requires
+const { uploadDir, categoryUploadDir } = require('../../../lib/upload');
 const bridge = require('../../../lib/adminApiBridge');
 
-const rootDir = join(__dirname, '../../..');
 const imageExt = ['.jpg', '.jpeg', '.png', '.webp', '.gif'];
 
-function uploadStorage(subdir: string) {
+function uploadStorage(destDir: string) {
   return diskStorage({
-    destination: join(rootDir, 'public', 'uploads', subdir),
+    destination: destDir,
     filename: (_req, file, cb) => {
       const ext = extname(file.originalname).toLowerCase() || '.jpg';
       const safe = imageExt.includes(ext) ? ext : '.jpg';
@@ -155,7 +154,7 @@ export class AdminController {
   @Post('upload')
   @UseInterceptors(
     FileInterceptor('image', {
-      storage: uploadStorage('products'),
+      storage: uploadStorage(uploadDir),
       limits: { fileSize: 20 * 1024 * 1024 },
     })
   )
@@ -171,7 +170,7 @@ export class AdminController {
   @Post('upload/category-hero')
   @UseInterceptors(
     FileInterceptor('image', {
-      storage: uploadStorage('categories'),
+      storage: uploadStorage(categoryUploadDir),
       limits: { fileSize: 20 * 1024 * 1024 },
     })
   )

@@ -134,7 +134,7 @@
           <% flashProducts.forEach(function(p) { %>
             <%- include('partials/product-card', { p: p }) %>
           <% }); %>
-          <% if (flashProducts.length >= 2) { flashProducts.forEach(function(p) { %>
+          <% if (flashProducts.length >= 4) { flashProducts.forEach(function(p) { %>
             <%- include('partials/product-card', { p: p }) %>
           <% }); } %>
         </div>
@@ -158,7 +158,7 @@
           <% newArrivalProducts.forEach(function(p) { %>
             <%- include('partials/product-card', { p: p }) %>
           <% }); %>
-          <% if (newArrivalProducts.length >= 2) { newArrivalProducts.forEach(function(p) { %>
+          <% if (newArrivalProducts.length >= 4) { newArrivalProducts.forEach(function(p) { %>
             <%- include('partials/product-card', { p: p }) %>
           <% }); } %>
         </div>

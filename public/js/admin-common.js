@@ -28,9 +28,28 @@ async function adminApi(path, options = {}) {
   });
   const data = await res.json().catch(() => ({}));
   if (!res.ok) {
-    throw new Error(data.error || `Request failed (${res.status})`);
+    const detail = Array.isArray(data.message)
+      ? data.message.join(', ')
+      : data.message;
+    const msg =
+      (typeof detail === 'string' && detail && detail !== 'Bad Request'
+        ? detail
+        : null) ||
+      (typeof data.error === 'string' && data.error !== 'Bad Request' ? data.error : null) ||
+      detail ||
+      data.error ||
+      `Request failed (${res.status})`;
+    throw new Error(msg);
   }
   return data;
+}
+
+function adminUploadError(data, fallback) {
+  if (!data || typeof data !== 'object') return fallback;
+  const msg = data.error || data.message;
+  if (Array.isArray(msg)) return msg.join(', ');
+  if (typeof msg === 'string' && msg && msg !== 'Bad Request') return msg;
+  return fallback;
 }
 
 function formatBDT(n) {
@@ -151,6 +170,7 @@ function clearAdminShellCache() {
 
 if (typeof window !== 'undefined') {
   window.adminApi = adminApi;
+  window.adminUploadError = adminUploadError;
   window.formatBDT = formatBDT;
   window.formatStatNum = formatStatNum;
   window.paymentLabel = paymentLabel;

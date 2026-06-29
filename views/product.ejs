@@ -10,7 +10,7 @@
 <meta name="description" content="<%= product.name %> — <%= product.desc ? product.desc.slice(0, 120) : 'WallNest BD' %>">
 <% } %>
 <link href="https://fonts.googleapis.com/css2?family=Hind+Siliguri:wght@300;400;500;600;700&family=DM+Sans:wght@300;400;500;600;700&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="/css/style.css?v=55">
+<link rel="stylesheet" href="/css/style.css?v=57">
 </head>
 <body>
 
@@ -73,6 +73,7 @@
           <span class="price-current" id="productPriceCurrent">৳<%= product.price.toLocaleString('bn-BD') %></span>
           <span class="price-original" id="productPriceOriginal" <%= product.original > product.price ? '' : 'style="display:none"' %>>৳<%= product.original.toLocaleString('bn-BD') %></span>
           <span class="price-save" id="productPriceSave" <%= product.original > product.price ? '' : 'style="display:none"' %>>সেভ ৳<%= (product.original - product.price).toLocaleString('bn-BD') %> (<%= Math.round((1 - product.price / product.original) * 100) %>% ছাড়)</span>
+          <span class="price-unit-hint" id="productPriceUnitHint" hidden></span>
         </div>
 
         <% if (product.sizes && product.sizes.length) { %>
@@ -95,7 +96,7 @@
         <% } %>
 
         <div class="product-meta-row">
-          <span>SKU: <strong>WN-<%= product.id %></strong></span>
+          <span>SKU: <strong><%= product.sku %></strong></span>
           <span>ব্র্যান্ড: <strong>WallNest BD</strong></span>
         </div>
 
@@ -155,7 +156,7 @@
           <tr><td>পণ্যের নাম</td><td><%= product.name %></td></tr>
           <% if (product.nameBn) { %><tr><td>নাম (বাংলা)</td><td><%= product.nameBn %></td></tr><% } %>
           <tr><td>ক্যাটাগরি</td><td><%= product.cat %></td></tr>
-          <tr><td>SKU</td><td>WN-<%= product.id %></td></tr>
+          <tr><td>SKU</td><td><%= product.sku %></td></tr>
           <tr><td>রেটিং</td><td><%= product.rating %> / 5</td></tr>
           <tr><td>স্টক</td><td><%= product.stock %> পিস</td></tr>
           <% if (product.badge) { %><tr><td>অফার</td><td><%= product.badge.toUpperCase() %></td></tr><% } %>
@@ -256,6 +257,6 @@
   }).replace(/</g, '\\u003c') %>;
   if (window.initProductPage) window.initProductPage();
 </script>
-<script src="/js/product-page.js?v=3"></script>
+<script src="/js/product-page.js?v=5"></script>
 </body>
 </html>

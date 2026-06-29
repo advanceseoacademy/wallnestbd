@@ -1,6 +1,8 @@
 (function () {
 let categories = [];
 let productImages = [];
+/** @type {Map<string, string>} uploaded url → original file name (for auto sort) */
+let productImageFileNames = new Map();
 let productSizes = [];
 let descriptionEditor = null;
 
@@ -129,6 +131,40 @@ function syncHiddenPriceFields(sizes) {
   document.getElementById('stock').value = sizes.reduce((sum, s) => sum + Number(s.stock || 0), 0);
 }
 
+function fileNameSortKey(filename) {
+  if (!filename) return '';
+  const base = String(filename).replace(/\.[^./\\]+$/, '').toLowerCase();
+  const nums = base.match(/\d+/g);
+  if (nums && nums.length) {
+    return `${nums.map((n) => String(parseInt(n, 10)).padStart(8, '0')).join('|')}|${base}`;
+  }
+  return base;
+}
+
+function sortFilesByName(files) {
+  return Array.from(files).sort((a, b) =>
+    fileNameSortKey(a.name).localeCompare(fileNameSortKey(b.name), undefined, {
+      numeric: true,
+      sensitivity: 'base',
+    })
+  );
+}
+
+function sortProductImagesByFileName() {
+  if (!productImageFileNames.size) return;
+  productImages.sort((a, b) => {
+    const ka = productImageFileNames.get(a);
+    const kb = productImageFileNames.get(b);
+    if (!ka && !kb) return 0;
+    if (!ka) return 1;
+    if (!kb) return -1;
+    return fileNameSortKey(ka).localeCompare(fileNameSortKey(kb), undefined, {
+      numeric: true,
+      sensitivity: 'base',
+    });
+  });
+}
+
 function normalizeAdminImageUrls(urls) {
   if (!urls) return [];
   let list = urls;
@@ -152,8 +188,62 @@ function normalizeAdminImageUrls(urls) {
 }
 
 function setProductImages(urls) {
+  productImageFileNames.clear();
   productImages = normalizeAdminImageUrls(urls);
   renderImagePreview();
+}
+
+function moveProductImage(from, to) {
+  if (from === to || from < 0 || to < 0 || from >= productImages.length || to >= productImages.length) {
+    return;
+  }
+  const [moved] = productImages.splice(from, 1);
+  productImages.splice(to, 0, moved);
+  renderImagePreview();
+}
+
+function bindImageDragDrop(preview) {
+  let dragFrom = null;
+
+  preview.querySelectorAll('.product-image-item').forEach((item) => {
+    item.addEventListener('dragstart', (e) => {
+      dragFrom = Number(item.dataset.index);
+      item.classList.add('is-dragging');
+      e.dataTransfer.effectAllowed = 'move';
+      e.dataTransfer.setData('text/plain', String(dragFrom));
+      if (e.dataTransfer.setDragImage) {
+        e.dataTransfer.setDragImage(item.querySelector('img') || item, 50, 50);
+      }
+    });
+
+    item.addEventListener('dragend', () => {
+      item.classList.remove('is-dragging');
+      preview.querySelectorAll('.product-image-item').forEach((el) => el.classList.remove('is-drag-over'));
+      dragFrom = null;
+    });
+
+    item.addEventListener('dragover', (e) => {
+      e.preventDefault();
+      e.dataTransfer.dropEffect = 'move';
+      preview.querySelectorAll('.product-image-item').forEach((el) => el.classList.remove('is-drag-over'));
+      item.classList.add('is-drag-over');
+    });
+
+    item.addEventListener('dragleave', (e) => {
+      if (!item.contains(e.relatedTarget)) item.classList.remove('is-drag-over');
+    });
+
+    item.addEventListener('drop', (e) => {
+      e.preventDefault();
+      item.classList.remove('is-drag-over');
+      const from =
+        dragFrom !== null && !Number.isNaN(dragFrom)
+          ? dragFrom
+          : Number(e.dataTransfer.getData('text/plain'));
+      const to = Number(item.dataset.index);
+      moveProductImage(from, to);
+    });
+  });
 }
 
 function renderImagePreview() {
@@ -166,12 +256,11 @@ function renderImagePreview() {
   preview.innerHTML = productImages
     .map(
       (url, index) => `
-    <div class="product-image-item ${index === 0 ? 'is-cover' : ''}" data-index="${index}">
+    <div class="product-image-item ${index === 0 ? 'is-cover' : ''}" data-index="${index}" draggable="true">
       ${index === 0 ? '<span class="product-image-cover-tag">মূল</span>' : ''}
       <img src="${url}" alt="">
+      <div class="product-image-drag-handle" title="টেনে সরান">⋮⋮ সরান</div>
       <div class="product-image-actions">
-        ${index > 0 ? `<button type="button" data-move="${index}" data-dir="-1">←</button>` : ''}
-        ${index < productImages.length - 1 ? `<button type="button" data-move="${index}" data-dir="1">→</button>` : ''}
         <button type="button" data-remove="${index}">মুছুন</button>
       </div>
     </div>`
@@ -180,29 +269,29 @@ function renderImagePreview() {
 
   preview.querySelectorAll('[data-remove]').forEach((btn) => {
     btn.onclick = () => {
-      productImages.splice(Number(btn.dataset.remove), 1);
+      const index = Number(btn.dataset.remove);
+      const url = productImages[index];
+      productImages.splice(index, 1);
+      if (url) productImageFileNames.delete(url);
       renderImagePreview();
     };
   });
 
-  preview.querySelectorAll('[data-move]').forEach((btn) => {
-    btn.onclick = () => {
-      const i = Number(btn.dataset.move);
-      const dir = Number(btn.dataset.dir);
-      const j = i + dir;
-      if (j < 0 || j >= productImages.length) return;
-      [productImages[i], productImages[j]] = [productImages[j], productImages[i]];
-      renderImagePreview();
-    };
-  });
+  bindImageDragDrop(preview);
 }
 
 async function uploadProductImage(file) {
   const fd = new FormData();
   fd.append('image', file);
   const res = await fetch('/api/admin/upload', { method: 'POST', body: fd });
-  const data = await res.json();
-  if (!res.ok) throw new Error(data.error || 'আপলোড ব্যর্থ');
+  const data = await res.json().catch(() => ({}));
+  if (!res.ok) {
+    throw new Error(
+      typeof adminUploadError === 'function'
+        ? adminUploadError(data, 'আপলোড ব্যর্থ')
+        : data.error || data.message || 'আপলোড ব্যর্থ'
+    );
+  }
   return data;
 }
 
@@ -287,13 +376,15 @@ async function initProductFormPage() {
   });
 
   document.getElementById('imageFile')?.addEventListener('change', async (e) => {
-    const files = Array.from(e.target.files || []);
+    const files = sortFilesByName(e.target.files || []);
     if (!files.length) return;
     try {
       for (const file of files) {
         const data = await uploadProductImage(file);
         productImages.push(data.url);
+        productImageFileNames.set(data.url, file.name);
       }
+      sortProductImagesByFileName();
       renderImagePreview();
     } catch (err) {
       alert(err.message);

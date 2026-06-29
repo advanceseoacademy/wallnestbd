@@ -200,47 +200,95 @@
     return getSelectedSizeBtn()?.dataset.label || '';
   }
 
-  function updateProductPriceFromSize(btn) {
-    if (!btn) return;
-    const price = Number(btn.dataset.price);
-    const original = Number(btn.dataset.original);
-    const stock = Number(btn.dataset.stock);
+  function getProductQty() {
+    return parseInt(document.getElementById('productQty')?.value, 10) || 1;
+  }
+
+  function getUnitPrices() {
+    const p = window.__PRODUCT_PAGE__ || {};
+    return {
+      price: Number(p.unitPrice ?? p.price) || 0,
+      original: Number(p.unitOriginal ?? p.original ?? p.price) || 0,
+    };
+  }
+
+  function getMaxProductQty() {
+    const p = window.__PRODUCT_PAGE__ || {};
+    const total = Number(p.totalStock ?? p.stock) || 0;
+    return Math.min(Math.max(total, 1), 99);
+  }
+
+  function refreshProductPriceDisplay() {
+    const { price: unitPrice, original: unitOriginal } = getUnitPrices();
+    const qty = getProductQty();
+    const total = unitPrice * qty;
+    const totalOriginal = unitOriginal * qty;
+
     const current = document.getElementById('productPriceCurrent');
     const origEl = document.getElementById('productPriceOriginal');
     const saveEl = document.getElementById('productPriceSave');
-    const fromLabel = document.querySelector('.price-from-label');
-    if (fromLabel) fromLabel.style.display = 'none';
-    if (current) current.textContent = formatProductBdt(price);
+    const unitHint = document.getElementById('productPriceUnitHint');
+
+    if (current) current.textContent = formatProductBdt(total);
     if (origEl && saveEl) {
-      if (original > price) {
+      if (unitOriginal > unitPrice) {
         origEl.style.display = '';
         saveEl.style.display = '';
-        origEl.textContent = formatProductBdt(original);
-        const saveAmt = original - price;
-        saveEl.textContent = `সেভ ৳${saveAmt.toLocaleString('bn-BD')} (${Math.round((1 - price / original) * 100)}% ছাড়)`;
+        origEl.textContent = formatProductBdt(totalOriginal);
+        const saveAmt = totalOriginal - total;
+        saveEl.textContent = `সেভ ৳${saveAmt.toLocaleString('bn-BD')} (${Math.round((1 - unitPrice / unitOriginal) * 100)}% ছাড়)`;
       } else {
         origEl.style.display = 'none';
         saveEl.style.display = 'none';
       }
     }
+    if (unitHint) {
+      if (qty > 1 && unitPrice > 0) {
+        unitHint.textContent = `প্রতি পিস: ${formatProductBdt(unitPrice)} × ${qty}`;
+        unitHint.hidden = false;
+      } else {
+        unitHint.textContent = '';
+        unitHint.hidden = true;
+      }
+    }
+  }
+
+  function updateProductPriceFromSize(btn) {
+    if (!btn) return;
+    const price = Number(btn.dataset.price);
+    const original = Number(btn.dataset.original);
+    const stock = Number(btn.dataset.stock);
+    const fromLabel = document.querySelector('.price-from-label');
+    if (fromLabel) fromLabel.style.display = 'none';
+
     const stockLine = document.getElementById('productStockLine');
     const qtyInput = document.getElementById('productQty');
     const addBtn = document.querySelector('.product-actions .btn-add-cart');
     const buyBtn = document.querySelector('.product-actions .btn-buy-now');
+    const totalStock = getMaxProductQty();
     if (stockLine) {
-      stockLine.className = `product-stock ${stock > 0 ? 'in-stock' : 'out-stock'}`;
-      stockLine.textContent =
-        stock > 0 ? `✅ স্টকে আছে — ${stock} পিস বাকি` : '❌ স্টক শেষ — শীঘ্রই আসছে';
+      const inStock = stock > 0 && totalStock > 0;
+      stockLine.className = `product-stock ${inStock ? 'in-stock' : 'out-stock'}`;
+      stockLine.textContent = inStock
+        ? `✅ স্টকে আছে — ${totalStock} পিস বাকি`
+        : '❌ স্টক শেষ — শীঘ্রই আসছে';
     }
-    if (qtyInput) qtyInput.max = Math.min(Math.max(stock, 1), 99);
+    if (qtyInput) {
+      qtyInput.max = totalStock;
+      const current = parseInt(qtyInput.value, 10) || 1;
+      if (current > totalStock) qtyInput.value = totalStock;
+    }
     [addBtn, buyBtn].forEach((el) => {
       if (el) el.disabled = stock <= 0;
     });
     if (window.__PRODUCT_PAGE__) {
+      window.__PRODUCT_PAGE__.unitPrice = price;
+      window.__PRODUCT_PAGE__.unitOriginal = original;
       window.__PRODUCT_PAGE__.price = price;
       window.__PRODUCT_PAGE__.original = original;
-      window.__PRODUCT_PAGE__.stock = stock;
+      window.__PRODUCT_PAGE__.sizeStock = stock;
     }
+    refreshProductPriceDisplay();
   }
 
   function bindSizeEvents() {
@@ -282,18 +330,26 @@
     bindSizeEvents();
     syncSizeSelection();
 
-    const maxQty = parseInt(document.getElementById('productQty')?.max, 10) || 99;
+    if (window.__PRODUCT_PAGE__) {
+      window.__PRODUCT_PAGE__.unitPrice = Number(window.__PRODUCT_PAGE__.price) || 0;
+      window.__PRODUCT_PAGE__.unitOriginal =
+        Number(window.__PRODUCT_PAGE__.original ?? window.__PRODUCT_PAGE__.price) || 0;
+      window.__PRODUCT_PAGE__.totalStock = Number(window.__PRODUCT_PAGE__.stock) || 0;
+    }
+    if (!document.getElementById('productSizeOptions')) {
+      refreshProductPriceDisplay();
+    }
 
     window.changeProductQty = function (delta) {
       const input = document.getElementById('productQty');
       if (!input) return;
-      const next = Math.min(maxQty, Math.max(1, parseInt(input.value, 10) + delta));
+      const max = parseInt(input.max, 10) || 99;
+      const next = Math.min(max, Math.max(1, parseInt(input.value, 10) + delta));
       input.value = next;
+      refreshProductPriceDisplay();
     };
 
-    window.getProductQty = function () {
-      return parseInt(document.getElementById('productQty')?.value, 10) || 1;
-    };
+    window.getProductQty = getProductQty;
 
     window.addToCartWithQty = async function (id) {
       const qty = getProductQty();

@@ -56,7 +56,7 @@
         <div class="form-group">
           <label class="form-label" for="imageFile">পণ্যের ছবি (একাধিক)</label>
           <input type="file" id="imageFile" accept="image/*" multiple class="form-input-file">
-          <small class="form-hint">একসাথে একাধিক ছবি সিলেক্ট করতে পারবেন। প্রথম ছবিটি মূল ইমেজ। বড় ছবি আপলোড করলেও সাইটে অটো WebP অপটিমাইজ হবে।</small>
+          <small class="form-hint">একসাথে একাধিক ছবি সিলেক্ট করুন — ফাইলের নাম অনুযায়ী অটো সাজাবে (যেমন 1, 2 বা 01, 02)। চাইলে টেনে ক্রম বদলাতে পারবেন। প্রথম ছবিটি মূল ইমেজ।</small>
           <div id="imagePreview" class="product-images-preview"></div>
         </div>
 
@@ -96,11 +96,19 @@
 .form-actions { display: flex; flex-wrap: wrap; gap: 12px; align-items: center; }
 .form-actions .btn-block { flex: 1; min-width: 200px; margin: 0; }
 .form-cancel-btn { text-decoration: none; text-align: center; padding: 12px 20px; }
-.product-images-preview { display: flex; flex-wrap: wrap; gap: 10px; margin-top: 10px; }
-.product-image-item { position: relative; width: 100px; }
-.product-image-item img { width: 100px; height: 100px; object-fit: cover; border-radius: 8px; border: 1px solid var(--border); display: block; }
+.product-images-preview { display: flex; flex-wrap: wrap; gap: 10px; margin-top: 10px; min-height: 8px; }
+.product-image-item { position: relative; width: 100px; touch-action: none; }
+.product-image-item img { width: 100px; height: 100px; object-fit: cover; border-radius: 8px; border: 1px solid var(--border); display: block; pointer-events: none; }
 .product-image-item.is-cover img { border-color: var(--blue); box-shadow: 0 0 0 2px rgba(0,113,206,.25); }
-.product-image-actions { display: flex; gap: 4px; margin-top: 4px; flex-wrap: wrap; }
+.product-image-item.is-dragging { opacity: 0.45; }
+.product-image-item.is-drag-over img { border-color: var(--blue); box-shadow: 0 0 0 2px rgba(0,113,206,.45); }
+.product-image-drag-handle {
+  display: flex; align-items: center; justify-content: center; gap: 2px;
+  margin-top: 4px; padding: 4px 0; font-size: 11px; font-weight: 600;
+  color: var(--muted2); cursor: grab; user-select: none; letter-spacing: 1px;
+}
+.product-image-item.is-dragging .product-image-drag-handle { cursor: grabbing; }
+.product-image-actions { display: flex; gap: 4px; margin-top: 2px; flex-wrap: wrap; justify-content: center; }
 .product-image-actions button { font-size: 11px; padding: 3px 6px; border-radius: 6px; border: 1px solid var(--border); background: var(--surface2); color: var(--text); cursor: pointer; }
 .product-image-cover-tag { position: absolute; top: 4px; left: 4px; background: var(--blue); color: #fff; font-size: 9px; font-weight: 700; padding: 2px 5px; border-radius: 4px; }
 .product-sizes-editor { display: flex; flex-direction: column; gap: 8px; }
@@ -120,5 +128,5 @@
 <link href="https://cdn.jsdelivr.net/npm/quill@2.0.3/dist/quill.snow.css" rel="stylesheet">
 <script src="https://cdn.jsdelivr.net/npm/quill@2.0.3/dist/quill.js"></script>
 <script src="/js/admin-common.js"></script>
-<script src="/js/admin-product-form.js?v=3"></script>
+<script src="/js/admin-product-form.js?v=5"></script>
 </body></html>
