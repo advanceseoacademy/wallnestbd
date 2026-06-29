@@ -10,9 +10,18 @@
 <link rel="stylesheet" href="/css/style.css?v=37">
 </head>
 <body>
+<%
+  const navKey = typeof activeNav !== 'undefined' ? activeNav : 'home';
+  const showHomeExtras = !(typeof isCategoryPage !== 'undefined' && isCategoryPage) && !(typeof isSearchPage !== 'undefined' && isSearchPage);
+  const stats = typeof heroStats !== 'undefined' ? heroStats : { categoryCount: 4, productCount: 0, avgRating: '4.8' };
+  const shipMin = (storeSettings && storeSettings.freeShippingMin) || 1500;
+  const catRow = (typeof isCategoryPage !== 'undefined' && isCategoryPage)
+    ? (categories || []).find(function(c) { return c.slug === navKey; })
+    : null;
+%>
+<%- include('partials/site-header', { categories, cartCount, user, activeNav: navKey, storeSettings, searchQuery: typeof searchQuery !== 'undefined' ? searchQuery : '' }) %>
 
-<%- include('partials/site-header', { categories, cartCount, user, activeNav: 'home' }) %>
-
+<% if (showHomeExtras) { %>
 <section class="hero">
   <div class="hero-inner site-wrap">
     <div>
@@ -24,9 +33,9 @@
         <a href="/track-order" class="btn-outline">📦 অর্ডার ট্র্যাক করুন</a>
       </div>
       <div class="hero-stats">
-        <div class="stat"><div class="stat-num">4</div><div class="stat-label">ক্যাটাগরি / Categories</div></div>
-        <div class="stat"><div class="stat-num">20+</div><div class="stat-label">ওয়াল আর্ট / Designs</div></div>
-        <div class="stat"><div class="stat-num">4.8★</div><div class="stat-label">রেটিং / Rating</div></div>
+        <div class="stat"><div class="stat-num"><%= stats.categoryCount %></div><div class="stat-label">ক্যাটাগরি / Categories</div></div>
+        <div class="stat"><div class="stat-num"><%= stats.productCount %><%= stats.productCount >= 20 ? '+' : '' %></div><div class="stat-label">ওয়াল আর্ট / Designs</div></div>
+        <div class="stat"><div class="stat-num"><%= stats.avgRating %>★</div><div class="stat-label">রেটিং / Rating</div></div>
         <div class="stat"><div class="stat-num">3-5d</div><div class="stat-label">প্রিন্ট ও ডেলিভারি</div></div>
       </div>
     </div>
@@ -41,12 +50,27 @@
     </div>
   </div>
 </section>
+<% } else if (catRow) { %>
+<section class="hero" style="padding:32px 0 16px;">
+  <div class="hero-inner site-wrap">
+    <div class="banner-tag"><%= catRow.icon %> <%= catRow.name_bn || catRow.name_en %></div>
+    <h1 style="font-size:clamp(1.5rem,4vw,2.25rem);margin:8px 0 0;"><%= catRow.name_bn || catRow.name_en %></h1>
+    <% if (catRow.name_en && catRow.name_bn) { %><p style="margin-top:8px;color:var(--text-muted);"><%= catRow.name_en %></p><% } %>
+  </div>
+</section>
+<% } else if (typeof isSearchPage !== 'undefined' && isSearchPage) { %>
+<section class="hero" style="padding:32px 0 16px;">
+  <div class="hero-inner site-wrap">
+    <h1 style="font-size:clamp(1.25rem,3.5vw,2rem);">🔍 "<%= searchQuery %>" — অনুসন্ধান ফলাফল</h1>
+  </div>
+</section>
+<% } %>
 
 <div class="categories">
   <div class="site-wrap">
   <div class="cat-grid" id="catGrid">
-    <% categories.forEach(function(c, i) { %>
-      <a href="<%= c.slug === 'all' ? '/' : '/category/' + encodeURIComponent(c.slug) %>" class="cat-chip <%= i === 0 ? 'active' : '' %>" data-cat="<%= c.slug %>">
+    <% categories.forEach(function(c) { %>
+      <a href="<%= c.slug === 'all' ? '/' : '/category/' + encodeURIComponent(c.slug) %>" class="cat-chip <%= (c.slug === 'all' ? navKey === 'home' : navKey === c.slug) ? 'active' : '' %>" data-cat="<%= c.slug %>">
         <div class="cat-icon"><%= c.icon %></div>
         <span><%= c.name_bn || c.name_en %></span>
       </a>
@@ -55,16 +79,19 @@
   </div>
 </div>
 
+<% if (showHomeExtras) { %>
 <div class="features-bar">
   <div class="features-grid site-wrap">
-    <div class="feature-item"><div class="feature-icon">🚚</div><div class="feature-text"><strong>ফ্রি শিপিং</strong><span>৳1500+ অর্ডারে</span></div></div>
+    <div class="feature-item"><div class="feature-icon">🚚</div><div class="feature-text"><strong>ফ্রি শিপিং</strong><span>৳<%= shipMin.toLocaleString('en-US') %>+ অর্ডারে</span></div></div>
     <div class="feature-item"><div class="feature-icon">🔄</div><div class="feature-text"><strong>৩০ দিনের রিটার্ন</strong><span>30-Day Easy Returns</span></div></div>
     <div class="feature-item"><div class="feature-icon">🔒</div><div class="feature-text"><strong>নিরাপদ পেমেন্ট</strong><span>100% Secure Checkout</span></div></div>
     <div class="feature-item"><div class="feature-icon">✅</div><div class="feature-text"><strong>bKash · Rocket · Nagad</strong><span>ম্যানুয়াল পেমেন্ট</span></div></div>
   </div>
 </div>
+<% } %>
 
 <div class="site-wrap site-main">
+  <% if (showHomeExtras) { %>
   <div class="section">
     <div class="banner-row">
       <div class="banner-main">
@@ -87,7 +114,9 @@
       </div>
     </div>
   </div>
+  <% } %>
 
+  <% if (showHomeExtras && flashProducts && flashProducts.length) { %>
   <div class="flash-sale-block">
     <div class="flash-sale-header">
       <div class="flash-title">⚡ ফ্ল্যাশ সেল / Flash Sale</div>
@@ -112,7 +141,9 @@
       </div>
     </div>
   </div>
+  <% } %>
 
+  <% if (showHomeExtras) { %>
   <div class="section new-arrivals-block" id="new-arrivals">
     <div class="section-header">
       <div class="section-title">🆕 নতুন আরাইভাল / <span>New Arrival</span></div>
@@ -139,21 +170,26 @@
     </div>
     <% } %>
   </div>
+  <% } %>
 
   <div id="category-sections">
-    <% (categorySections || []).forEach(function(sec) { %>
-      <%- include('partials/category-section', { sec: sec }) %>
-    <% }); %>
+    <% if (categorySections && categorySections.length) { %>
+      <% categorySections.forEach(function(sec) { %>
+        <%- include('partials/category-section', { sec: sec }) %>
+      <% }); %>
+    <% } else if (typeof isSearchPage !== 'undefined' && isSearchPage) { %>
+    <div class="new-arrivals-empty">
+      <p>"<%= searchQuery %>" এর জন্য কোনো পণ্য পাওয়া যায়নি।</p>
+    </div>
+    <% } %>
   </div>
 
+  <% if (showHomeExtras && reviews && reviews.length) { %>
   <div class="section" id="customer-reviews">
     <div class="section-header">
       <div class="section-title">💬 গ্রাহকের মতামত / <span>Customer Reviews</span></div>
-      <% if (reviews && reviews.length) { %>
       <a href="/reviews" class="see-all">View All →</a>
-      <% } %>
     </div>
-    <% if (reviews && reviews.length) { %>
     <div class="reviews-carousel" id="reviewsCarousel">
       <div class="reviews-carousel-viewport" id="reviewsCarouselViewport" aria-label="Customer reviews">
         <div class="reviews-track" id="reviewsTrack">
@@ -166,21 +202,18 @@
         </div>
       </div>
     </div>
-    <% } else { %>
-    <div class="new-arrivals-empty">
-      <p>এখনো কোনো রিভিউ নেই।</p>
-    </div>
-    <% } %>
   </div>
+  <% } %>
 </div>
 
-<%- include('partials/site-footer') %>
+<%- include('partials/site-footer', { storeSettings }) %>
 
-<%- include('partials/cart-modals') %>
+<%- include('partials/cart-modals', { storeSettings }) %>
 
 <script>
   window.__PRODUCTS__ = <%- JSON.stringify(products) %>;
-  window.__FLASH__ = <%- JSON.stringify(flashProducts) %>;
+  window.__FLASH__ = <%- JSON.stringify(flashProducts || []) %>;
+  window.__WN_STORE__ = <%- JSON.stringify(storeSettings || {}) %>;
 </script>
 <script src="/js/app.js"></script>
 </body>

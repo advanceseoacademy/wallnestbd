@@ -1,3 +1,4 @@
+(function () {
 function renderChart(chart) {
   const container = document.getElementById('chartArea');
   if (!container) return;
@@ -116,4 +117,5 @@ function renderCatalogCategories(list) {
   `;
 }
 
-runAdminPageInit(init);
+bootAdminPage('dashboard', init);
+})();

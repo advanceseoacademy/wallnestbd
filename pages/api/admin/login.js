@@ -8,8 +8,17 @@ export default async function handler(req, res) {
   }
 
   const session = await getIronSession(req, res, sessionOptions);
-  const user = process.env.ADMIN_USERNAME || 'admin';
-  const pass = process.env.ADMIN_PASSWORD || 'wallnest123';
+
+  if (process.env.NODE_ENV === 'production') {
+    if (!process.env.ADMIN_USERNAME || !process.env.ADMIN_PASSWORD) {
+      return res.redirect(307, '/admin/login?error=cfg');
+    }
+  }
+
+  const user =
+    process.env.ADMIN_USERNAME || (process.env.NODE_ENV === 'production' ? '' : 'admin');
+  const pass =
+    process.env.ADMIN_PASSWORD || (process.env.NODE_ENV === 'production' ? '' : 'wallnest123');
 
   const username = req.body?.username;
   const password = req.body?.password;

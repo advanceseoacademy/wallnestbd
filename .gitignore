@@ -2,6 +2,7 @@ node_modules/
 .next/
 admin-api/dist/
 .env
+.env.local
 .DS_Store
 *.log
 .npm

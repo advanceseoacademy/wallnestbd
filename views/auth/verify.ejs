@@ -1,0 +1,39 @@
+<!DOCTYPE html>
+<html lang="bn">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<%- include('../partials/favicon') %>
+<title>ইমেইল যাচাই — WallNest BD</title>
+<link href="https://fonts.googleapis.com/css2?family=Hind+Siliguri:wght@400;600;700&family=DM+Sans:wght@400;600;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="/css/style.css?v=52">
+</head>
+<body>
+
+<%- include('../partials/site-header', { categories, cartCount, user, activeNav: '', storeSettings }) %>
+
+<div class="site-wrap site-main" style="max-width:640px;margin:0 auto;padding:48px 16px 80px;text-align:center;">
+  <% if (typeof verifyError !== 'undefined' && verifyError) { %>
+  <div style="font-size:56px;margin-bottom:16px;">⚠️</div>
+  <h1 style="font-size:26px;font-weight:800;margin:0 0 12px;color:var(--text);">লিংকটি মেয়াদোত্তীর্ণ বা অবৈধ</h1>
+  <p style="font-size:15px;line-height:1.7;color:var(--text-muted);margin:0 0 28px;">
+    ইমেইল যাচাই লিংকটি আর কাজ করছে না। আবার লগইন করে নতুন যাচাই ইমেইল চাইতে পারেন।
+  </p>
+  <% } else { %>
+  <div style="font-size:56px;margin-bottom:16px;">✅</div>
+  <h1 style="font-size:26px;font-weight:800;margin:0 0 12px;color:var(--text);">ইমেইল যাচাই সম্পন্ন!</h1>
+  <p style="font-size:15px;line-height:1.7;color:var(--text-muted);margin:0 0 28px;">
+    আপনার WallNest BD অ্যাকাউন্ট সক্রিয় হয়েছে। এখন লগইন করে অর্ডার ট্র্যাক ও অ্যাকাউন্ট ম্যানেজ করতে পারবেন।
+  </p>
+  <% } %>
+  <a href="/" class="btn-primary" style="display:inline-block;padding:14px 28px;border-radius:8px;text-decoration:none;font-weight:700;margin-right:10px;" onclick="if(window.openModal){openModal('loginModal');return false;}">লগইন করুন</a>
+  <a href="/" class="see-all" style="display:inline-block;margin-top:12px;">🏠 হোমে যান</a>
+</div>
+
+<%- include('../partials/site-footer', { storeSettings }) %>
+<%- include('../partials/cart-modals', { storeSettings }) %>
+<script>window.__WN_STORE__ = <%- JSON.stringify(storeSettings || {}) %>;</script>
+<script src="/js/app.js?v=12"></script>
+
+</body>
+</html>

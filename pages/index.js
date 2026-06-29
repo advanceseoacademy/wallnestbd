@@ -11,6 +11,22 @@ export default function Home({ bodyHtml }) {
 
 export async function getServerSideProps({ req, res, query }) {
   try {
+    if (query.code || query.error || query.error_description) {
+      const params = new URLSearchParams();
+      if (query.code) params.set('code', String(query.code));
+      if (query.error) params.set('error', String(query.error));
+      if (query.error_description) {
+        params.set('error_description', String(query.error_description));
+      }
+      params.set('next', query.next ? String(query.next) : '/account');
+      return {
+        redirect: {
+          destination: `/auth/callback?${params.toString()}`,
+          permanent: false,
+        },
+      };
+    }
+
     const cat = query.category;
     const q = query.q;
     if (cat && cat !== 'all' && !q) {

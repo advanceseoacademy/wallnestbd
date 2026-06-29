@@ -1,6 +1,5 @@
 'use client';
 
-import Script from 'next/script';
 import { useEffect, useMemo, useState } from 'react';
 
 const ADMIN_COMMON = '/js/admin-common.js';
@@ -9,7 +8,7 @@ function adminCommonReady() {
   return typeof window !== 'undefined' && typeof window.runAdminPageInit === 'function';
 }
 
-/** Page scripts run only after admin-common.js (defines runAdminPageInit). */
+/** Load admin page scripts with cache-bust so inits re-run after client-side nav. */
 export default function AdminScripts({ scriptSrcs = [] }) {
   const ordered = useMemo(
     () => (scriptSrcs || []).filter((s) => s !== ADMIN_COMMON),
@@ -18,12 +17,10 @@ export default function AdminScripts({ scriptSrcs = [] }) {
 
   const loadKey = ordered.join('|');
   const [commonReady, setCommonReady] = useState(adminCommonReady);
-  const [loaded, setLoaded] = useState(0);
 
   useEffect(() => {
     if (adminCommonReady()) {
       setCommonReady(true);
-      setLoaded(ordered.length ? 1 : 0);
       return undefined;
     }
 
@@ -33,7 +30,6 @@ export default function AdminScripts({ scriptSrcs = [] }) {
       if (adminCommonReady()) {
         clearInterval(poll);
         setCommonReady(true);
-        setLoaded(ordered.length ? 1 : 0);
       }
     }, 20);
 
@@ -47,25 +43,36 @@ export default function AdminScripts({ scriptSrcs = [] }) {
       clearInterval(poll);
       clearTimeout(timeout);
     };
-  }, [loadKey, ordered.length]);
+  }, [loadKey]);
 
-  if (!ordered.length) return null;
-  if (!commonReady) return null;
+  useEffect(() => {
+    if (!commonReady || !ordered.length) return undefined;
 
-  return (
-    <>
-      {ordered.slice(0, loaded).map((src, i) => (
-        <Script
-          key={`${loadKey}-${src}`}
-          src={src}
-          strategy="afterInteractive"
-          onLoad={() => {
-            if (i === loaded - 1 && loaded < ordered.length) {
-              setLoaded((n) => n + 1);
-            }
-          }}
-        />
-      ))}
-    </>
-  );
+    let cancelled = false;
+    let index = 0;
+
+    const loadNext = () => {
+      if (cancelled || index >= ordered.length) return;
+      const src = ordered[index];
+      index += 1;
+      const el = document.createElement('script');
+      const bust = `_=${Date.now()}_${index}`;
+      el.src = src.includes('?') ? `${src}&${bust}` : `${src}?${bust}`;
+      el.async = false;
+      el.onload = () => loadNext();
+      el.onerror = () => {
+        console.error('[admin] script failed:', src);
+        loadNext();
+      };
+      document.body.appendChild(el);
+    };
+
+    loadNext();
+
+    return () => {
+      cancelled = true;
+    };
+  }, [loadKey, commonReady, ordered]);
+
+  return null;
 }

@@ -1,5 +1,3 @@
-<% const reviewCities = ['ঢাকা', 'চট্টগ্রাম', 'সিলেট', 'রাজশাহী', 'খুলনা', 'বরিশাল', 'গাজীপুর', 'নারায়ণগঞ্জ']; %>
-<% const city = reviewCities[(typeof i !== 'undefined' ? i : 0) % reviewCities.length]; %>
 <article class="review-card">
   <% if (r.product_name_bn || r.product_name) { %>
   <div class="review-product-tag">🛍️ <%= r.product_name_bn || r.product_name %></div>
@@ -8,7 +6,9 @@
     <div class="reviewer-avatar review-avatar-<%= (typeof i !== 'undefined' ? i : 0) % 4 %>" aria-hidden="true"><%= (r.reviewer_name || '?').slice(0, 2).toUpperCase() %></div>
     <div class="reviewer-meta">
       <div class="reviewer-name"><%= r.reviewer_name %></div>
-      <div class="reviewer-location">📍 <%= city %>, বাংলাদেশ</div>
+      <% if (r.reviewer_city || r.reviewer_location) { %>
+      <div class="reviewer-location">📍 <%= r.reviewer_city || r.reviewer_location %></div>
+      <% } %>
       <div class="review-stars-row">
         <span class="stars" aria-label="<%= r.rating %> out of 5 stars"><%= '★'.repeat(r.rating) %><%= '☆'.repeat(5 - r.rating) %></span>
         <span class="review-rating-num"><%= r.rating %>.0</span>

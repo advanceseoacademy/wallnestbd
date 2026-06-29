@@ -1,3 +1,4 @@
+(function () {
 let categoriesCache = [];
 
 function slugifyClient(name) {
@@ -144,4 +145,5 @@ function initCategoriesPage() {
   });
 }
 
-runAdminPageInit(initCategoriesPage);
+bootAdminPage('categories', initCategoriesPage);
+})();

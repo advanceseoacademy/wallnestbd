@@ -79,7 +79,8 @@ Repo: **https://github.com/advanceseoacademy/wallnestbd**
 ### 2) SSH — clone & build
 
 ```bash
-cd /home/wallnestbd.com   # or your CyberPanel site path
+mkdir -p /home/wallnestbd.com/app
+cd /home/wallnestbd.com/app
 git clone https://github.com/advanceseoacademy/wallnestbd.git .
 npm install
 npm install --prefix admin-api
@@ -117,16 +118,18 @@ pm2 save
 pm2 startup
 ```
 
-App listens on **port 3000** (Next.js + Nest admin API).
+App listens on **port 3010** (CyberPanel often uses 3000 internally — do not use 3000).
 
 ### 4) CyberPanel — reverse proxy to Node
 
-**Websites → List Websites → wallnestbd.com → Manage → vHost Conf** (or **Rewrite Rules**), proxy to `http://127.0.0.1:3000`:
+**Websites → List Websites → wallnestbd.com → Manage → vHost Conf** — add at the **end**, proxy to `http://127.0.0.1:3010`:
 
 ```apache
+maxReqHeaderSize        65536
+
 extprocessor node_app {
   type                    proxy
-  address                 127.0.0.1:3000
+  address                 127.0.0.1:3010
   maxConns                100
   initTimeout             60
   retryTimeout            0
@@ -142,12 +145,19 @@ context / {
 
 Save and **graceful restart** OpenLiteSpeed from CyberPanel.
 
-Alternative: **Websites → Setup Node.js App** (if available) — app root = site folder, startup file `npm start`, port `3000`.
+Alternative: **Websites → Setup Node.js App** (if available) — app root = `/home/wallnestbd.com/app`, startup file `npm start`, port `3010`.
 
-### 5) Updates after code changes
+### 5) Fix “431 Request Header Fields Too Large” (nghttpx)
+
+1. **Browser:** clear cookies for `wallnestbd.com` (old/large session cookies are a common cause).
+2. **OpenLiteSpeed:** **Server Configuration → Tuning** — set **Max Request Header Size** to `65536`, then graceful restart.
+3. **vHost Conf:** include `maxReqHeaderSize 65536` at the top (see section 4).
+4. Confirm the proxy points to **3010**, not 3000 (`curl -I http://127.0.0.1:3010` should show your app, not `nghttpx` alone).
+
+### 6) Updates after code changes
 
 ```bash
-cd /home/wallnestbd.com
+cd /home/wallnestbd.com/app
 git pull
 npm install
 npm install --prefix admin-api
@@ -156,6 +166,18 @@ pm2 restart wallnestbd
 ```
 
 Ensure `public/uploads/` is writable and backed up.
+
+## Google sign-in (Gmail)
+
+1. **Supabase** → Authentication → Providers → **Google** → Enable  
+2. **Google Cloud Console** → APIs & Services → Credentials → OAuth 2.0 Client  
+   - Authorized redirect URI: `https://<project-ref>.supabase.co/auth/v1/callback`
+3. Paste Google **Client ID** + **Client Secret** into Supabase Google provider  
+4. **Supabase** → Authentication → URL Configuration → Redirect URLs:
+   - `https://wallnestbd.com/auth/callback`
+   - `http://localhost:3000/auth/callback` (local dev)
+
+Users see **“Google দিয়ে চালিয়ে যান”** on login/register modals.
 
 ## Features
 

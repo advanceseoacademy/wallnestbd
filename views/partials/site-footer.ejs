@@ -19,7 +19,7 @@
         <p class="footer-desc">সেরা মানের পণ্য, সঠিক দামে আপনার কাছে পৌঁছে দেওয়াই আমাদের লক্ষ্য।</p>
       </div>
       <div class="footer-col"><h4>কাস্টমার কেয়ার</h4><ul><li><a href="/track-order">অর্ডার ট্র্যাক</a></li><li><a href="#">রিটার্ন পলিসি</a></li></ul></div>
-      <div class="footer-col"><h4>যোগাযোগ</h4><ul><li><a href="#">📧 support@wallnestbd.com</a></li><li><a href="#">📞 01XXXXXXXXX</a></li></ul></div>
+      <div class="footer-col"><h4>যোগাযোগ</h4><ul><li><a href="mailto:<%= (storeSettings && storeSettings.supportEmail) || 'support@wallnestbd.com' %>">📧 <%= (storeSettings && storeSettings.supportEmail) || 'support@wallnestbd.com' %></a></li><% if (storeSettings && storeSettings.supportPhone) { %><li><a href="tel:<%= storeSettings.supportPhone %>">📞 <%= storeSettings.supportPhone %></a></li><% } %></ul></div>
     </div>
     <div class="footer-bottom">
       <span>© 2026 WallNest BD. All rights reserved.</span>

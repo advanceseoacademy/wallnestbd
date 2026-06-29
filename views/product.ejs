@@ -14,7 +14,7 @@
 </head>
 <body>
 
-<%- include('partials/site-header', { categories, cartCount, user, activeNav: product.catSlug }) %>
+<%- include('partials/site-header', { categories, cartCount, user, activeNav: product.catSlug, storeSettings }) %>
 
 <div class="product-page">
   <div class="product-page-inner site-wrap">
@@ -51,7 +51,7 @@
           <% } %>
         </div>
         <div class="product-mini-perks">
-          <div class="mini-perk"><span>🚚</span><div><strong>ফ্রি ডেলিভারি</strong><small>৳1500+ অর্ডারে</small></div></div>
+          <div class="mini-perk"><span>🚚</span><div><strong>ফ্রি ডেলিভারি</strong><small>৳<%= ((storeSettings && storeSettings.freeShippingMin) || 1500).toLocaleString('en-US') %>+ অর্ডারে</small></div></div>
           <div class="mini-perk"><span>🔒</span><div><strong>নিরাপদ পেমেন্ট</strong><small>bKash · Rocket · Nagad</small></div></div>
           <div class="mini-perk"><span>🔄</span><div><strong>সহজ রিটার্ন</strong><small>৩০ দিনের মধ্যে</small></div></div>
         </div>
@@ -184,10 +184,14 @@
         <h3>ডেলিভারি ও রিটার্ন</h3>
         <ul class="delivery-list">
           <li>🚚 ঢাকার ভিতরে ২–৪ কর্মদিবস, ঢাকার বাইরে ৩–৭ কর্মদিবস</li>
-          <li>💰 ৳1500+ অর্ডারে সমগ্র বাংলাদেশে ফ্রি ডেলিভারি</li>
+          <li>💰 ৳<%= ((storeSettings && storeSettings.freeShippingMin) || 1500).toLocaleString('en-US') %>+ অর্ডারে সমগ্র বাংলাদেশে ফ্রি ডেলিভারি</li>
           <li>💳 bKash, Rocket, Nagad — ম্যানুয়াল পেমেন্ট, Trx ID দিয়ে অর্ডার কনফার্ম</li>
           <li>🔄 ৩০ দিনের মধ্যে ত্রুটিপূর্ণ পণ্য রিটার্ন/রিপ্লেসমেন্ট</li>
-          <li>📞 সাপোর্ট: 01XXXXXXXXX (সকাল ৯টা – রাত ৯টা)</li>
+          <% if (storeSettings && storeSettings.supportPhone) { %>
+          <li>📞 সাপোর্ট: <%= storeSettings.supportPhone %> (সকাল ৯টা – রাত ৯টা)</li>
+          <% } else if (storeSettings && storeSettings.supportEmail) { %>
+          <li>📧 সাপোর্ট: <%= storeSettings.supportEmail %></li>
+          <% } %>
         </ul>
       </div>
     </div>
@@ -227,10 +231,11 @@
   </div>
 </div>
 
-<%- include('partials/site-footer') %>
-<%- include('partials/cart-modals') %>
+<%- include('partials/site-footer', { storeSettings }) %>
+<%- include('partials/cart-modals', { storeSettings }) %>
 
 <script>
+  window.__WN_STORE__ = <%- JSON.stringify(storeSettings || {}) %>;
   window.__PRODUCT_PAGE__ = <%- JSON.stringify({
     id: product.id,
     slug: product.slug,

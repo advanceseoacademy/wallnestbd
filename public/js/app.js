@@ -1,8 +1,37 @@
+(function redirectOAuthCodeToCallback() {
+  if (typeof window === 'undefined') return;
+  const path = window.location.pathname || '/';
+  if (path === '/auth/callback') return;
+  const params = new URLSearchParams(window.location.search);
+  const code = params.get('code');
+  const oauthError = params.get('error') || params.get('error_description');
+  if (!code && !oauthError) return;
+  const qs = new URLSearchParams();
+  if (code) qs.set('code', code);
+  if (params.get('error')) qs.set('error', params.get('error'));
+  if (params.get('error_description')) qs.set('error_description', params.get('error_description'));
+  qs.set('next', params.get('next') || '/account');
+  window.location.replace(`/auth/callback?${qs.toString()}`);
+})();
+
 const products = window.__PRODUCTS__ || [];
 let activeCategory = 'all';
 let paymentSettings = {};
 let selectedPayment = null;
 let checkoutTotal = 0;
+
+function getStoreShippingConfig() {
+  const cfg = window.__WN_STORE__ || {};
+  return {
+    freeShippingMin: Number(cfg.freeShippingMin) || 1500,
+    shippingFee: Number(cfg.shippingFee) || 80,
+  };
+}
+
+function calcShipping(subtotal) {
+  const { freeShippingMin, shippingFee } = getStoreShippingConfig();
+  return Number(subtotal) >= freeShippingMin ? 0 : shippingFee;
+}
 
 function formatBDT(n) {
   return `৳${Number(n || 0).toLocaleString('bn-BD', { maximumFractionDigits: 0 })}`;
@@ -31,7 +60,11 @@ async function api(path, options = {}) {
     ...options,
   });
   const data = await res.json().catch(() => ({}));
-  if (!res.ok) throw new Error(data.error || 'Request failed');
+  if (!res.ok) {
+    const err = new Error(data.error || 'Request failed');
+    err.needsVerification = Boolean(data.needsVerification);
+    throw err;
+  }
   return data;
 }
 
@@ -131,14 +164,22 @@ function getCategorySlugFromUrl() {
   return new URLSearchParams(window.location.search).get('category');
 }
 
+function setActiveCategoryChip(slug) {
+  activeCategory = slug || 'all';
+  document.querySelectorAll('.cat-chip').forEach((c) => {
+    c.classList.toggle('active', c.dataset.cat === activeCategory);
+  });
+}
+
 function applyCategoryFromUrl() {
   const urlCat = getCategorySlugFromUrl();
   if (urlCat && urlCat !== 'all') {
     filterCategory(urlCat);
     return;
   }
+  // Homepage load: highlight "all" without auto-scrolling past the hero
   if (document.querySelector('.cat-chip[data-cat="all"]')) {
-    filterCategory('all');
+    setActiveCategoryChip('all');
   }
 }
 
@@ -414,7 +455,7 @@ function renderCartItems(items, subtotal) {
   }
   footer.style.display = 'block';
   const lineSubtotal = cartLineSubtotal(items, subtotal);
-  const shipping = lineSubtotal >= 1500 ? 0 : 80;
+  const shipping = calcShipping(lineSubtotal);
   checkoutTotal = lineSubtotal + shipping;
   if (headerCount) {
     headerCount.textContent = `${itemCount} আইটেম`;
@@ -663,17 +704,77 @@ async function subscribeNewsletter(e) {
   }
 }
 
+let supabaseBrowserClient = null;
+
+function getSupabaseCreateClient() {
+  const lib = window.supabase;
+  if (!lib?.createClient) {
+    throw new Error('Google sign-in লাইব্রেরি লোড হয়নি। পেজ রিফ্রেশ করুন।');
+  }
+  return lib.createClient;
+}
+
+function supabaseAuthStorageKey(url) {
+  const ref = String(url || '').match(/https?:\/\/([^.]+)\.supabase\.co/i)?.[1];
+  return ref ? `sb-${ref}-auth-token` : 'sb-auth-token';
+}
+
+function getSupabaseBrowser() {
+  if (!window.__WN_SB__?.url || !window.__WN_SB__?.key) {
+    throw new Error('Google sign-in is not configured yet.');
+  }
+  if (supabaseBrowserClient) return supabaseBrowserClient;
+  const createClient = getSupabaseCreateClient();
+  const sbUrl = window.__WN_SB__.url;
+  supabaseBrowserClient = createClient(sbUrl, window.__WN_SB__.key, {
+    auth: {
+      flowType: 'pkce',
+      persistSession: true,
+      autoRefreshToken: true,
+      detectSessionInUrl: false,
+      storageKey: supabaseAuthStorageKey(sbUrl),
+    },
+  });
+  return supabaseBrowserClient;
+}
+
+async function signInWithGoogle(e) {
+  if (e?.preventDefault) e.preventDefault();
+  try {
+    const sb = getSupabaseBrowser();
+    const next =
+      new URLSearchParams(location.search).get('next') ||
+      (location.pathname.startsWith('/account') ? '/account' : '/account');
+    const redirectTo = `${location.origin}/auth/callback?next=${encodeURIComponent(next)}`;
+    const { data, error } = await sb.auth.signInWithOAuth({
+      provider: 'google',
+      options: {
+        redirectTo,
+        queryParams: { prompt: 'select_account' },
+      },
+    });
+    if (error) throw error;
+    if (!data?.url) throw new Error('Google redirect URL পাওয়া যায়নি');
+    closeModal('loginModal');
+    closeModal('registerModal');
+    window.location.href = data.url;
+  } catch (err) {
+    showToast(err.message || 'Google লগইন ব্যর্থ', 'warning');
+  }
+}
+
 async function login(e) {
   e.preventDefault();
+  const email = document.getElementById('loginEmail').value;
+  const password = document.getElementById('loginPassword').value;
   try {
     const res = await api('/auth/login', {
       method: 'POST',
-      body: JSON.stringify({
-        email: document.getElementById('loginEmail').value,
-        password: document.getElementById('loginPassword').value,
-      }),
+      body: JSON.stringify({ email, password }),
     });
     closeModal('loginModal');
+    clearPageCaches();
+    patchHeaderAuth(res.user);
     if (res.linkedOrders > 0) {
       showToast(`${res.linkedOrders}টি গেস্ট অর্ডার আপনার অ্যাকাউন্টে যুক্ত হয়েছে! 📦`);
     } else {
@@ -682,6 +783,23 @@ async function login(e) {
     const next = new URLSearchParams(location.search).get('next') || '/account';
     setTimeout(() => { window.location.href = next; }, 600);
   } catch (err) {
+    if (err.needsVerification) {
+      const resend = confirm(
+        `${err.message}\n\nআবার যাচাই লিংক পাঠাতে চান?`
+      );
+      if (resend) {
+        try {
+          await api('/auth/resend-verification', {
+            method: 'POST',
+            body: JSON.stringify({ email, password }),
+          });
+          showToast('নতুন যাচাই লিংক ইমেইলে পাঠানো হয়েছে 📧');
+        } catch (resendErr) {
+          showToast(resendErr.message, 'warning');
+        }
+      }
+      return;
+    }
     showToast(err.message, 'warning');
   }
 }
@@ -699,14 +817,90 @@ async function register(e) {
       }),
     });
     closeModal('registerModal');
-    showToast('অ্যাকাউন্ট তৈরি হয়েছে! ইমেইল চেক করুন। 🎉');
+    showToast('অ্যাকাউন্ট তৈরি হয়েছে! ইমেইলে যাচাই লিংক পাঠানো হয়েছে 📧');
   } catch (err) {
     showToast(err.message, 'warning');
   }
 }
 
+const USER_ICON_SVG =
+  '<svg class="header-icon" viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>';
+
+function clearPageCaches() {
+  try {
+    Object.keys(sessionStorage).forEach((key) => {
+      if (key.startsWith('wn_page_') || key.startsWith('wn_account_')) {
+        sessionStorage.removeItem(key);
+      }
+    });
+  } catch {
+    /* ignore */
+  }
+}
+
+function patchHeaderAuth(user) {
+  const actions = document.querySelector('.header-actions');
+  if (!actions) return;
+  const cartBtn = actions.querySelector('.header-btn-cart');
+  if (!cartBtn) return;
+
+  [...actions.children].forEach((el) => {
+    if (!el.classList.contains('header-btn-cart')) el.remove();
+  });
+
+  if (user?.email) {
+    const accountLink = document.createElement('a');
+    accountLink.href = '/account';
+    accountLink.className = 'header-btn header-icon-btn';
+    accountLink.setAttribute('aria-label', 'আমার অ্যাকাউন্ট');
+    accountLink.innerHTML = `${USER_ICON_SVG}<span class="only-desktop">আমার অ্যাকাউন্ট</span>`;
+
+    const logoutBtn = document.createElement('button');
+    logoutBtn.type = 'button';
+    logoutBtn.className = 'header-btn only-desktop';
+    logoutBtn.textContent = 'লগআউট';
+    logoutBtn.addEventListener('click', () => logout());
+
+    actions.insertBefore(accountLink, cartBtn);
+    actions.insertBefore(logoutBtn, cartBtn);
+    return;
+  }
+
+  const mobileLogin = document.createElement('button');
+  mobileLogin.type = 'button';
+  mobileLogin.className = 'header-btn header-icon-btn only-mobile';
+  mobileLogin.setAttribute('aria-label', 'লগইন');
+  mobileLogin.innerHTML = USER_ICON_SVG;
+  mobileLogin.addEventListener('click', () => openModal('loginModal'));
+
+  const desktopLogin = document.createElement('button');
+  desktopLogin.type = 'button';
+  desktopLogin.className = 'header-btn only-desktop';
+  desktopLogin.innerHTML = '👤 <span>লগইন</span>';
+  desktopLogin.addEventListener('click', () => openModal('loginModal'));
+
+  actions.insertBefore(mobileLogin, cartBtn);
+  actions.insertBefore(desktopLogin, cartBtn);
+}
+
+async function refreshNavContext() {
+  try {
+    const res = await fetch('/api/nav-context', { credentials: 'same-origin' });
+    if (!res.ok) return;
+    const data = await res.json();
+    const el = document.getElementById('cartCount');
+    if (el && typeof data.cartCount === 'number') {
+      el.textContent = String(data.cartCount);
+    }
+    patchHeaderAuth(data.user);
+  } catch {
+    /* ignore */
+  }
+}
+
 async function logout() {
   await api('/auth/logout', { method: 'POST' });
+  clearPageCaches();
   location.reload();
 }
 
@@ -869,8 +1063,20 @@ bootStoreCarousels();
 
 refreshCart();
 loadPaymentMethods();
+refreshNavContext();
 
 if (new URLSearchParams(location.search).get('login') === '1') {
   openModal('loginModal');
 }
+
+window.openModal = openModal;
+window.closeModal = closeModal;
+window.signInWithGoogle = signInWithGoogle;
+window.login = login;
+window.register = register;
+window.logout = logout;
+window.toggleCart = toggleCart;
+window.patchHeaderAuth = patchHeaderAuth;
+window.refreshNavContext = refreshNavContext;
+window.clearPageCaches = clearPageCaches;
 

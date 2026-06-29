@@ -1,5 +1,16 @@
+import path from 'path';
+import { fileURLToPath } from 'url';
+
+const __dirname = path.dirname(fileURLToPath(import.meta.url));
+
 /** @type {import('next').NextConfig} */
 const nextConfig = {
+  outputFileTracingRoot: __dirname,
+  env: {
+    SUPABASE_URL: process.env.SUPABASE_URL,
+    SUPABASE_PUBLISHABLE_KEY: process.env.SUPABASE_PUBLISHABLE_KEY,
+    SUPABASE_ANON_KEY: process.env.SUPABASE_ANON_KEY,
+  },
   reactStrictMode: true,
   serverExternalPackages: ['ejs'],
   poweredByHeader: false,

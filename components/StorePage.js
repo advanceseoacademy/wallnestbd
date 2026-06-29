@@ -5,7 +5,7 @@ import { useRouter } from 'next/router';
 import Script from 'next/script';
 import SeoHead from './SeoHead';
 
-const CACHE_PREFIX = 'wn_page_v4:';
+const CACHE_PREFIX = 'wn_page_v5:';
 const CACHE_TTL_MS = 3 * 60 * 1000;
 
 export function readPageCache(path) {
@@ -49,6 +49,9 @@ export function patchNavFromApi(data) {
   const el = document.getElementById('cartCount');
   if (el && typeof data.cartCount === 'number') {
     el.textContent = String(data.cartCount);
+  }
+  if (typeof window.patchHeaderAuth === 'function') {
+    window.patchHeaderAuth(data.user);
   }
 }
 

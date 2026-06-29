@@ -12,7 +12,10 @@ import {
   ACCOUNT_CSS_ID,
   ensureAccountStylesheet,
 } from '../lib/client/ensureAccountStylesheet';
+import { getPublicSupabaseConfig } from '../lib/auth/publicSupabaseConfig';
 const FastNav = dynamic(() => import('../components/FastNav'), { ssr: false });
+
+const supabasePublicConfig = getPublicSupabaseConfig();
 
 function isStoreRoute(pathname) {
   return (
@@ -34,7 +37,8 @@ export default function App({ Component, pageProps }) {
   const useAccountShell =
     isAccount && pageProps.bodyHtml;
 
-  const showFastNav = !isAdmin;
+  const isAuthCallback = router.pathname === '/auth/callback';
+  const showFastNav = !isAdmin && !isAuthCallback;
 
   useEffect(() => {
     if (isAccount) {
@@ -50,6 +54,22 @@ export default function App({ Component, pageProps }) {
 
   return (
     <>
+      {!isAdmin ? (
+        <Script
+          src="/js/supabase.min.js?v=1"
+          strategy="beforeInteractive"
+          id="wn-supabase-lib"
+        />
+      ) : null}
+      {!isAdmin && supabasePublicConfig.url && supabasePublicConfig.key ? (
+        <Script
+          id="wn-sb-config"
+          strategy="beforeInteractive"
+          dangerouslySetInnerHTML={{
+            __html: `window.__WN_SB__=${JSON.stringify(supabasePublicConfig)};`,
+          }}
+        />
+      ) : null}
       {showFastNav ? <FastNav /> : null}
       {isAdmin ? (
         <Script src="/js/admin-common.js" strategy="beforeInteractive" />
@@ -62,7 +82,7 @@ export default function App({ Component, pageProps }) {
               href="https://fonts.googleapis.com/css2?family=Syne:wght@400;500;600;700;800&family=Hind+Siliguri:wght@300;400;500;600;700&display=swap"
               rel="stylesheet"
             />
-            <link rel="stylesheet" href="/css/admin.css?v=7" />
+            <link rel="stylesheet" href="/css/admin.css?v=8" />
           </Head>
         </>
       ) : null}
@@ -81,7 +101,7 @@ export default function App({ Component, pageProps }) {
       ) : null}
       {useStoreShell ? (
         <>
-          <Script src="/js/app.js" strategy="afterInteractive" id="wn-store-app" />
+          <Script src="/js/app.js?v=18" strategy="beforeInteractive" id="wn-store-app" />
           <StorePage pageProps={pageProps} />
         </>
       ) : useAccountShell ? (

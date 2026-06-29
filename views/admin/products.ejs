@@ -5,7 +5,7 @@
     <div><div class="page-title">পণ্য ম্যানেজমেন্ট</div><div class="page-subtitle">ইসলামিক · ফ্যামিলি · কিডস · অফিস</div></div>
     <div class="topbar-right">
       <a href="/admin/settings" class="card-btn" style="margin-right:8px;text-decoration:none;">⚙️ সেটিংস</a>
-      <button class="card-btn active" type="button" id="btnAddProduct">+ নতুন পণ্য</button>
+      <a href="/admin/products/new" class="card-btn active" style="text-decoration:none;">+ নতুন পণ্য</a>
     </div>
   </div>
   <div class="content">
@@ -19,71 +19,6 @@
     </div>
   </div>
 </div>
-<div class="admin-modal-overlay" id="productModal" aria-hidden="true">
-  <div class="admin-modal-panel" role="dialog" aria-labelledby="modalTitle">
-    <div class="admin-modal-header">
-      <h3 id="modalTitle">পণ্য</h3>
-      <button type="button" class="admin-modal-close" data-modal-close aria-label="বন্ধ করুন" title="বন্ধ (Esc)">×</button>
-    </div>
-    <form id="productForm">
-      <input type="hidden" id="productId">
-      <div class="form-group"><label class="form-label">নাম (EN)</label><input class="form-input" id="nameEn" required></div>
-      <div class="form-group"><label class="form-label">নাম (BN)</label><input class="form-input" id="nameBn"></div>
-      <div class="form-group"><label class="form-label">ক্যাটাগরি</label><select class="form-input" id="categoryId"></select></div>
-      <div class="form-group">
-        <div style="display:flex;justify-content:space-between;align-items:center;gap:8px;margin-bottom:8px;">
-          <label class="form-label" style="margin:0;">সাইজ ও দাম</label>
-          <button type="button" class="card-btn" id="btnAddSize" style="padding:6px 10px;font-size:12px;">+ সাইজ</button>
-        </div>
-        <div id="productSizesHead" class="product-sizes-head product-size-row-admin" hidden>
-          <span>সাইজ</span>
-          <span>বিক্রয় দাম</span>
-          <span>আগের দাম</span>
-          <span>স্টক</span>
-          <span></span>
-        </div>
-        <div id="productSizesList" class="product-sizes-editor"></div>
-        <small style="display:block;margin-top:6px;color:var(--muted2);font-size:12px;">প্রতিটি সাইজের জন্য আলাদা দাম ও স্টক দিন। হোমপেজে সবচেয়ে কম দাম দেখাবে।</small>
-      </div>
-      <input type="hidden" id="price">
-      <input type="hidden" id="originalPrice">
-      <input type="hidden" id="stock" value="100">
-      <div class="form-group"><label class="form-label">আইকন (emoji)</label><input class="form-input" id="icon" value="📦"></div>
-      <div class="form-group">
-        <label class="form-label">পণ্যের ছবি (একাধিক)</label>
-        <input type="file" id="imageFile" accept="image/*" multiple>
-        <small style="display:block;margin-top:6px;color:var(--muted2);font-size:12px;">একসাথে একাধিক ছবি সিলেক্ট করতে পারবেন। প্রথম ছবিটি মূল ইমেজ। বড় ছবি আপলোড করলেও সাইটে অটো WebP অপটিমাইজ হবে (সর্বোচ্চ ২০০০px, ভালো কোয়ালিটি)।</small>
-        <div id="imagePreview" class="product-images-preview"></div>
-      </div>
-      <div class="form-group"><label class="form-label">বিবরণ</label><textarea class="form-input" id="description" rows="3"></textarea></div>
-      <label style="display:flex;gap:8px;align-items:center;margin-bottom:12px;"><input type="checkbox" id="isFeatured" checked> ফিচার্ড</label>
-      <label style="display:flex;gap:8px;align-items:center;margin-bottom:16px;"><input type="checkbox" id="isFlash"> ফ্ল্যাশ সেল</label>
-      <div class="admin-modal-actions">
-        <button class="btn-block" type="submit">সেভ করুন</button>
-        <button type="button" class="card-btn" style="width:100%;" data-modal-close>বাতিল</button>
-      </div>
-    </form>
-  </div>
-</div>
-<style>
-.form-group{margin-bottom:14px}
-.form-label{display:block;font-size:13px;margin-bottom:6px;color:var(--muted2)}
-.form-input{width:100%;padding:10px;background:var(--surface2);border:1px solid var(--border);border-radius:8px;color:var(--text);font-family:inherit}
-.product-images-preview{display:flex;flex-wrap:wrap;gap:10px;margin-top:10px}
-.product-image-item{position:relative;width:88px}
-.product-image-item img{width:88px;height:88px;object-fit:cover;border-radius:8px;border:1px solid var(--border);display:block}
-.product-image-item.is-cover img{border-color:var(--blue);box-shadow:0 0 0 2px rgba(0,113,206,.25)}
-.product-image-actions{display:flex;gap:4px;margin-top:4px;flex-wrap:wrap}
-.product-image-actions button{font-size:11px;padding:3px 6px;border-radius:6px;border:1px solid var(--border);background:var(--surface2);color:var(--text);cursor:pointer}
-.product-image-actions button:hover{border-color:var(--blue);color:var(--blue)}
-.product-image-cover-tag{position:absolute;top:4px;left:4px;background:var(--blue);color:#fff;font-size:9px;font-weight:700;padding:2px 5px;border-radius:4px}
-.product-sizes-editor{display:flex;flex-direction:column;gap:8px}
-.product-sizes-head span{font-size:11px;font-weight:600;color:var(--muted2);letter-spacing:.02em}
-.product-size-row-admin{display:grid;grid-template-columns:1.4fr 0.9fr 0.9fr 0.7fr auto;gap:8px;align-items:center}
-.product-size-row-admin input{padding:8px;font-size:12px}
-.product-size-row-admin button{padding:6px 8px;font-size:11px}
-@media (max-width:720px){.product-size-row-admin{grid-template-columns:1fr 1fr;}}
-</style>
 <script src="/js/admin-common.js"></script>
-<script src="/js/admin-products.js"></script>
+<script src="/js/admin-products.js?v=6"></script>
 </body></html>

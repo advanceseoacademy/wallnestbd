@@ -1,3 +1,4 @@
+(function () {
 const HERO_LIMIT = 4;
 
 async function uploadHeroImage(file) {
@@ -76,9 +77,10 @@ async function init() {
   renderHeroSlots(categories || []);
 }
 
-runAdminPageInit(() =>
+bootAdminPage('settings', () =>
   init().catch((err) => {
     console.error(err);
     alert(err.message || 'সেটিংস লোড হয়নি');
   })
 );
+})();

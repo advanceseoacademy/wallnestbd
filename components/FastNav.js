@@ -34,11 +34,13 @@ function accountPath(pathname) {
   return pathname === ACCOUNT_PATH;
 }
 
-async function fetchStorePage(pathname) {
-  const res = await fetch(
-    `/api/store/page?path=${encodeURIComponent(pathname)}`,
-    { credentials: 'same-origin' }
-  );
+async function fetchStorePage(pathWithQuery) {
+  const pathname = pathWithQuery.split('?')[0].split('#')[0];
+  const qs = pathWithQuery.includes('?') ? pathWithQuery.split('?')[1].split('#')[0] : '';
+  const pageParam = qs ? new URLSearchParams(qs).get('page') : null;
+  let url = `/api/store/page?path=${encodeURIComponent(pathname)}`;
+  if (pageParam) url += `&page=${encodeURIComponent(pageParam)}`;
+  const res = await fetch(url, { credentials: 'same-origin' });
   if (!res.ok) return null;
   return res.json();
 }
@@ -50,19 +52,19 @@ async function fetchAccountPage() {
 }
 
 function prefetchStorePage(path) {
-  const clean = path.split('?')[0];
+  const clean = path.split('?')[0].split('#')[0];
   if (!storePath(clean)) return;
   const cacheKey = path.split('#')[0];
   if (readPageCache(cacheKey)) return;
-  if (prefetchInflight.has(clean)) return;
+  if (prefetchInflight.has(cacheKey)) return;
 
-  prefetchInflight.add(clean);
-  fetchStorePage(clean)
+  prefetchInflight.add(cacheKey);
+  fetchStorePage(cacheKey)
     .then((data) => {
       if (data?.bodyHtml) writePageCache(cacheKey, data);
     })
     .catch(() => {})
-    .finally(() => prefetchInflight.delete(clean));
+    .finally(() => prefetchInflight.delete(cacheKey));
 }
 
 function prefetchAccountPage() {
@@ -85,7 +87,7 @@ async function loadStorePage(path) {
   const cached = readPageCache(cacheKey);
   if (cached?.bodyHtml) return cached;
 
-  const data = await fetchStorePage(cacheKey.split('?')[0]);
+  const data = await fetchStorePage(cacheKey);
   if (data?.bodyHtml) {
     writePageCache(cacheKey, data);
     return data;

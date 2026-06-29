@@ -6,9 +6,11 @@ const {
   updateCartQty,
   removeFromCart,
   clearCart,
+  validateCartStock,
 } = require('../lib/cart');
 const { filterByProductParam } = require('../lib/productQuery');
 const { mergePaymentSettings } = require('../lib/paymentDefaults');
+const { getStoreSettings, computeShipping } = require('../lib/storeSettings');
 const { trackOrderByNumber } = require('../lib/orderTracking');
 const { filterStoreCategories } = require('../lib/catalogCategories');
 const { requireUser } = require('../middleware/requireUser');
@@ -16,9 +18,15 @@ const { getAccountData, updateProfile } = require('../lib/accountService');
 const { linkGuestOrders } = require('../lib/orderLinking');
 const { mapProduct } = require('../lib/mapProduct');
 const {
-  queueWelcomeEmail,
+  queueVerificationEmail,
   queueOrderConfirmationEmail,
 } = require('../lib/email/mailer');
+const {
+  registerUserWithVerification,
+  resendVerificationLink,
+  mapAuthError,
+} = require('../lib/auth/registerUser');
+const { establishUserSessionFromToken } = require('../lib/auth/oauthSession');
 const { renderPageForNext } = require('../lib/renderView');
 const { getAccountPageData } = require('../lib/storeData');
 
@@ -26,14 +34,14 @@ const router = express.Router();
 
 router.get('/products', async (req, res) => {
   try {
-    const { q, category, flash } = req.query;
+    const { q, category, flash, featured } = req.query;
     let query = supabase
       .from('products')
       .select('*, categories(slug, name_en, name_bn)')
       .order('created_at', { ascending: true });
 
     if (flash === '1') query = query.eq('is_flash_sale', true);
-    else query = query.eq('is_featured', true);
+    else if (featured === '1') query = query.eq('is_featured', true);
 
     if (category && category !== 'all') {
       const { data: cat } = await supabase
@@ -181,6 +189,12 @@ router.post('/orders', async (req, res) => {
       return res.status(400).json({ error: 'Cart is empty' });
     }
 
+    try {
+      await validateCartStock(req);
+    } catch (stockErr) {
+      return res.status(400).json({ error: stockErr.message });
+    }
+
     const {
       shipping_name,
       shipping_phone,
@@ -204,7 +218,8 @@ router.post('/orders', async (req, res) => {
     }
 
     const subtotal = items.reduce((s, i) => s + i.price * i.qty, 0);
-    const shipping = subtotal >= 1500 ? 0 : 80;
+    const storeSettings = await getStoreSettings();
+    const shipping = computeShipping(subtotal, storeSettings);
     const total = subtotal + shipping;
     const orderNumber = `WN-${Date.now().toString(36).toUpperCase()}`;
 
@@ -294,27 +309,44 @@ router.post('/auth/register', async (req, res) => {
       return res.status(400).json({ error: 'Email and password required' });
     }
 
-    const { data, error } = await supabase.auth.signUp({
+    const { verificationUrl } = await registerUserWithVerification({
       email,
       password,
-      options: {
-        data: { first_name: firstName, last_name: lastName },
-      },
+      firstName,
+      lastName,
     });
-    if (error) throw error;
+    queueVerificationEmail({
+      email,
+      firstName,
+      lastName,
+      verificationUrl,
+    });
 
-    if (data.user) {
-      await supabase.from('profiles').upsert({
-        id: data.user.id,
-        first_name: firstName,
-        last_name: lastName,
-      });
-      queueWelcomeEmail({ email, firstName, lastName });
+    res.json({
+      ok: true,
+      message: 'অ্যাকাউন্ট তৈরি হয়েছে! ইমেইলে পাঠানো যাচাই লিংকে ক্লিক করুন।',
+    });
+  } catch (err) {
+    res.status(400).json({ error: mapAuthError(err) });
+  }
+});
+
+router.post('/auth/resend-verification', async (req, res) => {
+  try {
+    const { email, password } = req.body;
+    if (!email || !password) {
+      return res.status(400).json({ error: 'ইমেইল ও পাসওয়ার্ড প্রয়োজন' });
     }
 
-    res.json({ ok: true, message: 'অ্যাকাউন্ট তৈরি হয়েছে! ইমেইল চেক করুন।' });
+    const { verificationUrl } = await resendVerificationLink({ email, password });
+    queueVerificationEmail({ email, verificationUrl });
+
+    res.json({
+      ok: true,
+      message: 'নতুন যাচাই লিংক ইমেইলে পাঠানো হয়েছে।',
+    });
   } catch (err) {
-    res.status(400).json({ error: err.message });
+    res.status(400).json({ error: mapAuthError(err) });
   }
 });
 
@@ -325,7 +357,15 @@ router.post('/auth/login', async (req, res) => {
       email,
       password,
     });
-    if (error) throw error;
+    if (error) {
+      const needsVerify =
+        error.code === 'email_not_confirmed' ||
+        (error.message || '').toLowerCase().includes('email not confirmed');
+      return res.status(400).json({
+        error: mapAuthError(error),
+        needsVerification: needsVerify,
+      });
+    }
 
     req.session.user = {
       id: data.user.id,
@@ -348,6 +388,16 @@ router.post('/auth/login', async (req, res) => {
     });
   } catch (err) {
     res.status(401).json({ error: err.message });
+  }
+});
+
+router.post('/auth/oauth', async (req, res) => {
+  try {
+    const { access_token: accessToken } = req.body;
+    const result = await establishUserSessionFromToken(req, accessToken);
+    res.json({ ok: true, ...result });
+  } catch (err) {
+    res.status(400).json({ error: err.message || 'Google sign-in failed' });
   }
 });
 

@@ -1,3 +1,4 @@
+(function () {
 const keys = ['bkash', 'rocket', 'nagad'];
 const labels = { bkash: 'bKash', rocket: 'Rocket', nagad: 'Nagad' };
 const defaultNumbers = {
@@ -50,4 +51,5 @@ function initPaymentsPage() {
     .catch(console.error);
 }
 
-runAdminPageInit(initPaymentsPage);
+bootAdminPage('payments', initPaymentsPage);
+})();

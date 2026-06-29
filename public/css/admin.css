@@ -585,6 +585,10 @@ tbody td {
   transition: all 0.15s;
   font-family: inherit;
 }
+a.action-btn {
+  display: inline-block;
+  text-decoration: none;
+}
 .action-btn:hover { background: var(--blue-dim); color: var(--blue); border-color: rgba(0, 113, 206, 0.35); }
 
 /* ── TOP PRODUCTS ── */
@@ -899,15 +903,17 @@ body:has(.admin-app-shell) {
   display: block;
   overflow: hidden;
   background: var(--bg);
+  height: 100vh;
+  height: 100dvh;
 }
 
 body:has(.admin-app-shell) #__next {
   display: flex;
   flex-direction: column;
   width: 100%;
-  min-height: 100vh;
-  min-height: 100dvh;
   height: 100%;
+  min-height: 0;
+  overflow: hidden;
 }
 
 .admin-app-shell {
@@ -917,8 +923,9 @@ body:has(.admin-app-shell) #__next {
   flex: 1;
   width: 100%;
   max-width: 100%;
-  min-height: 100vh;
-  min-height: 100dvh;
+  min-height: 0;
+  height: 100%;
+  overflow: hidden;
   position: relative;
   background: var(--bg);
 }
@@ -941,12 +948,14 @@ body:has(.admin-app-shell) #__next {
 #adminMain {
   flex: 1;
   min-width: 0;
+  min-height: 0;
   width: auto;
   max-width: 100%;
   display: flex;
   flex-direction: column;
-  min-height: 100vh;
-  min-height: 100dvh;
+  overflow-y: auto;
+  overflow-x: hidden;
+  -webkit-overflow-scrolling: touch;
 }
 
 /* No second margin-left — #adminMain is already beside sidebar */
@@ -955,9 +964,9 @@ body:has(.admin-app-shell) #__next {
   margin-left: 0;
   width: 100%;
   max-width: 100%;
-  flex: 1;
-  min-height: 100vh;
-  min-height: 100dvh;
+  flex: 1 0 auto;
+  min-height: 0;
+  overflow: visible;
 }
 
 .admin-app-shell .content {

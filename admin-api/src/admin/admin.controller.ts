@@ -74,6 +74,15 @@ export class AdminController {
     }
   }
 
+  @Get('products/:id')
+  async product(@Param('id') id: string) {
+    try {
+      return await bridge.getProduct(id);
+    } catch (e) {
+      throw new BadRequestException(e.message);
+    }
+  }
+
   @Post('products')
   async createProduct(@Body() body: Record<string, unknown>) {
     try {

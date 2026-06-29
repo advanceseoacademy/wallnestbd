@@ -118,7 +118,7 @@ export default function AccountPage({ pageProps }) {
             onLoad={refreshDashboard}
           />
         ))}
-      <Script src="/js/app.js" strategy="afterInteractive" id="wn-store-app-account" />
+      <Script src="/js/app.js?v=18" strategy="beforeInteractive" id="wn-store-app-account" />
     </>
   );
 }

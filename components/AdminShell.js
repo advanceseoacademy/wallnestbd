@@ -4,13 +4,15 @@ import { useCallback, useEffect, useLayoutEffect, useRef, useState } from 'react
 import { useRouter } from 'next/router';
 import AdminScripts from './AdminScripts';
 
-const CACHE_PREFIX = 'wn_admin_v1:';
+const CACHE_PREFIX = 'wn_admin_v3:';
 const CACHE_TTL_MS = 5 * 60 * 1000;
 
-const ADMIN_PAGES = new Set([
+const ADMIN_PATHS = new Set([
   'dashboard',
   'orders',
   'products',
+  'products/new',
+  'products/edit',
   'categories',
   'payments',
   'settings',
@@ -44,18 +46,22 @@ function writeAdminCache(path, data) {
   }
 }
 
-function slugFromPath(pathname) {
-  const part = pathname.replace(/^\/admin\/?/, '').split('/')[0];
-  return part || 'dashboard';
+function adminSubpath(pathname) {
+  return pathname.replace(/^\/admin\/?/, '').split('?')[0] || 'dashboard';
 }
 
-function updateSidebarActive(page) {
+function updateSidebarActive(path) {
   const slug =
-    page ||
-    (typeof window !== 'undefined' ? slugFromPath(window.location.pathname) : 'dashboard');
+    path || (typeof window !== 'undefined' ? adminSubpath(window.location.pathname) : 'dashboard');
   document.querySelectorAll('.sidebar .nav-item[data-page]').forEach((el) => {
-    el.classList.toggle('active', el.dataset.page === slug);
+    const navPage = el.dataset.page;
+    const active = slug === navPage || slug.startsWith(`${navPage}/`);
+    el.classList.toggle('active', active);
   });
+}
+
+function isAdminPath(path) {
+  return ADMIN_PATHS.has(path);
 }
 
 export default function AdminShell({
@@ -63,75 +69,78 @@ export default function AdminShell({
   mainHtml,
   scriptSrcs,
   page,
+  adminPath,
 }) {
   const router = useRouter();
+  const routeKey = adminPath || page;
   const [main, setMain] = useState(mainHtml);
   const [scripts, setScripts] = useState(scriptSrcs || []);
   const [navigating, setNavigating] = useState(false);
-  const pendingScriptsRef = useRef(null);
   const skipRouteLoadRef = useRef(false);
+  const ssrSyncedRef = useRef(false);
 
-  const applyPage = useCallback((data, slug) => {
-    setScripts([]);
+  const applyPage = useCallback((data) => {
     setMain(data.mainHtml);
-    pendingScriptsRef.current = data.scriptSrcs || [];
-    updateSidebarActive(data.page || slug);
+    setScripts(data.scriptSrcs || []);
+    updateSidebarActive(data.adminPath || data.page);
   }, []);
 
   useLayoutEffect(() => {
-    if (pendingScriptsRef.current === null) return;
-    const next = pendingScriptsRef.current;
-    pendingScriptsRef.current = null;
-    setScripts(next);
+    if (!main) return;
+    document.body.style.overflow = '';
+    window.dispatchEvent(new CustomEvent('wn:admin-main'));
   }, [main]);
 
   useEffect(() => {
-    const pathSlug = slugFromPath(router.asPath.split('?')[0]);
+    const pathSlug = adminSubpath(router.asPath.split('?')[0]);
     updateSidebarActive(pathSlug);
-    // Shallow client nav: props stay from first SSR page; loadPage owns #adminMain.
-    if (page !== pathSlug) return;
+    if (routeKey !== pathSlug) return;
 
-    applyPage({ mainHtml, scriptSrcs: scriptSrcs || [], page: pathSlug }, pathSlug);
+    applyPage({
+      mainHtml,
+      scriptSrcs: scriptSrcs || [],
+      page,
+      adminPath: routeKey,
+    });
     if (mainHtml && router.asPath) {
       writeAdminCache(router.asPath.split('?')[0], {
         mainHtml,
         scriptSrcs: scriptSrcs || [],
         page,
+        adminPath: routeKey,
       });
     }
-  }, [mainHtml, scriptSrcs, page, router.asPath, applyPage]);
+  }, [mainHtml, scriptSrcs, page, routeKey, router.asPath, applyPage]);
 
   const loadPage = useCallback(
-    async (pathname) => {
-      const path = pathname.split('?')[0];
-      const slug = slugFromPath(path);
-      if (!ADMIN_PAGES.has(slug)) return;
+    async (pathnameWithQuery) => {
+      const url = new URL(pathnameWithQuery, window.location.origin);
+      const pathOnly = url.pathname;
+      const subpath = adminSubpath(pathOnly);
+      if (!isAdminPath(subpath)) return;
 
-      const cached = readAdminCache(path);
-      if (cached && (cached.page || slug) === slug) {
-        applyPage(cached, cached.page || slug);
+      const cacheKey = pathOnly + url.search;
+      const cached = readAdminCache(cacheKey);
+      if (cached && (cached.adminPath || cached.page)) {
+        applyPage(cached);
         return;
-      }
-      if (cached) {
-        try {
-          sessionStorage.removeItem(CACHE_PREFIX + path);
-        } catch {
-          /* ignore */
-        }
       }
 
       setNavigating(true);
       try {
-        const res = await fetch(`/api/admin/page?slug=${encodeURIComponent(slug)}`, {
-          credentials: 'same-origin',
+        const apiUrl = new URL('/api/admin/page', window.location.origin);
+        apiUrl.searchParams.set('path', subpath);
+        url.searchParams.forEach((value, key) => {
+          apiUrl.searchParams.set(key, value);
         });
+        const res = await fetch(apiUrl.toString(), { credentials: 'same-origin' });
         const data = await res.json();
         if (!res.ok) throw new Error(data.error || 'লোড ব্যর্থ');
-        applyPage(data, data.page || slug);
-        writeAdminCache(path, data);
+        applyPage(data);
+        writeAdminCache(cacheKey, data);
       } catch (err) {
         console.error(err);
-        window.location.href = path;
+        window.location.href = pathnameWithQuery;
       } finally {
         setNavigating(false);
       }
@@ -156,17 +165,17 @@ export default function AdminShell({
       }
       if (url.origin !== window.location.origin) return;
 
-      const path = url.pathname + url.search;
-      const current = router.asPath.split('?')[0];
-      if (url.pathname === current) return;
+      const subpath = adminSubpath(url.pathname);
+      if (!isAdminPath(subpath)) return;
 
-      const slug = slugFromPath(url.pathname);
-      if (!ADMIN_PAGES.has(slug)) return;
+      const target = url.pathname + url.search;
+      const current = router.asPath;
+      if (target === current) return;
 
       e.preventDefault();
       skipRouteLoadRef.current = true;
-      router.push(url.pathname + url.search, undefined, { shallow: true });
-      loadPage(url.pathname);
+      router.push(target, undefined, { shallow: true });
+      loadPage(target);
     };
 
     const onRoute = (url) => {
@@ -176,6 +185,14 @@ export default function AdminShell({
         skipRouteLoadRef.current = false;
         return;
       }
+
+      const subpath = adminSubpath(url.split('?')[0]);
+      if (!ssrSyncedRef.current && subpath === routeKey) {
+        ssrSyncedRef.current = true;
+        window.dispatchEvent(new CustomEvent('wn:admin-main'));
+        return;
+      }
+      ssrSyncedRef.current = true;
       loadPage(url);
     };
 
@@ -186,14 +203,17 @@ export default function AdminShell({
       if (!href || href.includes('login')) return;
       try {
         const url = new URL(href, window.location.origin);
-        const slug = slugFromPath(url.pathname);
-        if (!ADMIN_PAGES.has(slug)) return;
-        fetch(`/api/admin/page?slug=${encodeURIComponent(slug)}`, {
-          credentials: 'same-origin',
-        }).then(async (res) => {
+        const subpath = adminSubpath(url.pathname);
+        if (!isAdminPath(subpath)) return;
+        const apiUrl = new URL('/api/admin/page', window.location.origin);
+        apiUrl.searchParams.set('path', subpath);
+        url.searchParams.forEach((value, key) => {
+          apiUrl.searchParams.set(key, value);
+        });
+        fetch(apiUrl.toString(), { credentials: 'same-origin' }).then(async (res) => {
           if (!res.ok) return;
           const data = await res.json();
-          writeAdminCache(url.pathname, data);
+          writeAdminCache(url.pathname + url.search, data);
         });
       } catch {
         /* ignore */
@@ -208,7 +228,7 @@ export default function AdminShell({
       document.removeEventListener('mouseover', prefetch);
       router.events.off('routeChangeComplete', onRoute);
     };
-  }, [router, loadPage]);
+  }, [router, loadPage, routeKey]);
 
   return (
     <div className={`admin-app-shell${navigating ? ' admin-navigating' : ''}`}>

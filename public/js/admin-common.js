@@ -14,6 +14,11 @@ if (typeof window !== 'undefined' && typeof window.runAdminPageInit !== 'functio
     );
   };
 }
+if (typeof window !== 'undefined' && typeof window.bootAdminPage !== 'function') {
+  window.bootAdminPage = function bootAdminPageStub(_id, fn) {
+    window.runAdminPageInit(fn);
+  };
+}
 
 async function adminApi(path, options = {}) {
   const res = await fetch(`/api/admin${path}`, {
@@ -85,7 +90,9 @@ function closeAdminModal(overlayId) {
   if (!el) return;
   el.classList.remove('is-open');
   el.setAttribute('aria-hidden', 'true');
-  document.body.style.overflow = '';
+  if (!document.querySelector('.admin-modal-overlay.is-open')) {
+    document.body.style.overflow = '';
+  }
 }
 
 function bindAdminModal(overlayId, onClose) {
@@ -116,6 +123,27 @@ function runAdminPageInit(fn) {
   requestAnimationFrame(() => requestAnimationFrame(run));
 }
 
+/**
+ * AdminShell injects page scripts on each client nav — wrap page files in an IIFE
+ * and call this so `let`/`const` are not redeclared and listeners stay single.
+ */
+function bootAdminPage(moduleId, initFn) {
+  const key = `__wnAdminBoot_${moduleId}`;
+  if (!window[key]) {
+    window[key] = true;
+    document.addEventListener('wn:admin-main', () => runAdminPageInit(initFn));
+  }
+  runAdminPageInit(initFn);
+}
+
+function clearAdminShellCache() {
+  try {
+    Object.keys(sessionStorage)
+      .filter((k) => k.startsWith('wn_admin_'))
+      .forEach((k) => sessionStorage.removeItem(k));
+  } catch (_) {}
+}
+
 if (typeof window !== 'undefined') {
   window.adminApi = adminApi;
   window.formatBDT = formatBDT;
@@ -126,4 +154,6 @@ if (typeof window !== 'undefined') {
   window.closeAdminModal = closeAdminModal;
   window.bindAdminModal = bindAdminModal;
   window.runAdminPageInit = runAdminPageInit;
+  window.bootAdminPage = bootAdminPage;
+  window.clearAdminShellCache = clearAdminShellCache;
 }

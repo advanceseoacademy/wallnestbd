@@ -1,0 +1,113 @@
+<%- include('partials/head', { title: formMode === 'edit' ? 'পণ্য এডিট' : 'নতুন পণ্য' }) %>
+<%- include('partials/sidebar', { page: 'products', admin }) %>
+<div class="main">
+  <div class="topbar">
+    <div>
+      <div class="page-title"><%= formMode === 'edit' ? 'পণ্য এডিট' : 'নতুন পণ্য যোগ করুন' %></div>
+      <div class="page-subtitle">ছবি, সাইজ, দাম ও বিবরণ পূরণ করে সেভ করুন</div>
+    </div>
+    <div class="topbar-right">
+      <a href="/admin/products" class="card-btn" style="text-decoration:none;">← পণ্য তালিকা</a>
+    </div>
+  </div>
+  <div class="content">
+    <div class="card product-form-card">
+      <form id="productForm">
+        <input type="hidden" id="productId" value="<%= productId || '' %>">
+        <div class="form-grid">
+          <div class="form-group">
+            <label class="form-label" for="nameEn">নাম (EN) *</label>
+            <input class="form-input" id="nameEn" required>
+          </div>
+          <div class="form-group">
+            <label class="form-label" for="nameBn">নাম (BN)</label>
+            <input class="form-input" id="nameBn">
+          </div>
+          <div class="form-group">
+            <label class="form-label" for="categoryId">ক্যাটাগরি *</label>
+            <select class="form-input" id="categoryId" required></select>
+          </div>
+          <div class="form-group">
+            <label class="form-label" for="icon">আইকন (emoji)</label>
+            <input class="form-input" id="icon" value="📦">
+          </div>
+        </div>
+
+        <div class="form-group">
+          <div class="form-row-head">
+            <label class="form-label" style="margin:0;">সাইজ ও দাম *</label>
+            <button type="button" class="card-btn" id="btnAddSize" style="padding:6px 12px;font-size:12px;">+ সাইজ</button>
+          </div>
+          <div id="productSizesHead" class="product-sizes-head product-size-row-admin" hidden>
+            <span>সাইজ</span>
+            <span>বিক্রয় দাম</span>
+            <span>আগের দাম</span>
+            <span>স্টক</span>
+            <span></span>
+          </div>
+          <div id="productSizesList" class="product-sizes-editor"></div>
+          <small class="form-hint">প্রতিটি সাইজের জন্য আলাদা দাম ও স্টক দিন। হোমপেজে সবচেয়ে কম দাম দেখাবে।</small>
+        </div>
+
+        <input type="hidden" id="price">
+        <input type="hidden" id="originalPrice">
+        <input type="hidden" id="stock" value="100">
+
+        <div class="form-group">
+          <label class="form-label" for="imageFile">পণ্যের ছবি (একাধিক)</label>
+          <input type="file" id="imageFile" accept="image/*" multiple class="form-input-file">
+          <small class="form-hint">একসাথে একাধিক ছবি সিলেক্ট করতে পারবেন। প্রথম ছবিটি মূল ইমেজ। বড় ছবি আপলোড করলেও সাইটে অটো WebP অপটিমাইজ হবে।</small>
+          <div id="imagePreview" class="product-images-preview"></div>
+        </div>
+
+        <div class="form-group">
+          <label class="form-label" for="description">বিবরণ</label>
+          <textarea class="form-input" id="description" rows="5"></textarea>
+        </div>
+
+        <div class="form-checks">
+          <label class="form-check"><input type="checkbox" id="isFeatured" checked> ফিচার্ড</label>
+          <label class="form-check"><input type="checkbox" id="isFlash"> ফ্ল্যাশ সেল</label>
+        </div>
+
+        <div class="form-actions">
+          <button class="btn-block" type="submit" id="btnSaveProduct">সেভ করুন</button>
+          <a href="/admin/products" class="card-btn form-cancel-btn">বাতিল</a>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>
+<style>
+.product-form-card { padding: 24px; max-width: 920px; }
+.form-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+.form-group { margin-bottom: 18px; }
+.form-label { display: block; font-size: 13px; margin-bottom: 6px; color: var(--muted2); font-weight: 600; }
+.form-input { width: 100%; padding: 11px 12px; background: var(--surface2); border: 1px solid var(--border); border-radius: 8px; color: var(--text); font-family: inherit; box-sizing: border-box; }
+.form-input-file { width: 100%; padding: 10px; background: var(--surface2); border: 1px dashed var(--border); border-radius: 8px; color: var(--text); }
+.form-hint { display: block; margin-top: 6px; color: var(--muted2); font-size: 12px; }
+.form-row-head { display: flex; justify-content: space-between; align-items: center; gap: 8px; margin-bottom: 8px; }
+.form-checks { display: flex; flex-wrap: wrap; gap: 16px; margin-bottom: 20px; }
+.form-check { display: flex; gap: 8px; align-items: center; font-size: 14px; }
+.form-actions { display: flex; flex-wrap: wrap; gap: 12px; align-items: center; }
+.form-actions .btn-block { flex: 1; min-width: 200px; margin: 0; }
+.form-cancel-btn { text-decoration: none; text-align: center; padding: 12px 20px; }
+.product-images-preview { display: flex; flex-wrap: wrap; gap: 10px; margin-top: 10px; }
+.product-image-item { position: relative; width: 100px; }
+.product-image-item img { width: 100px; height: 100px; object-fit: cover; border-radius: 8px; border: 1px solid var(--border); display: block; }
+.product-image-item.is-cover img { border-color: var(--blue); box-shadow: 0 0 0 2px rgba(0,113,206,.25); }
+.product-image-actions { display: flex; gap: 4px; margin-top: 4px; flex-wrap: wrap; }
+.product-image-actions button { font-size: 11px; padding: 3px 6px; border-radius: 6px; border: 1px solid var(--border); background: var(--surface2); color: var(--text); cursor: pointer; }
+.product-image-cover-tag { position: absolute; top: 4px; left: 4px; background: var(--blue); color: #fff; font-size: 9px; font-weight: 700; padding: 2px 5px; border-radius: 4px; }
+.product-sizes-editor { display: flex; flex-direction: column; gap: 8px; }
+.product-sizes-head span { font-size: 11px; font-weight: 600; color: var(--muted2); }
+.product-size-row-admin { display: grid; grid-template-columns: 1.4fr 0.9fr 0.9fr 0.7fr auto; gap: 8px; align-items: center; }
+.product-size-row-admin input { padding: 8px; font-size: 12px; }
+@media (max-width: 720px) {
+  .form-grid { grid-template-columns: 1fr; }
+  .product-size-row-admin { grid-template-columns: 1fr 1fr; }
+}
+</style>
+<script src="/js/admin-common.js"></script>
+<script src="/js/admin-product-form.js?v=2"></script>
+</body></html>
