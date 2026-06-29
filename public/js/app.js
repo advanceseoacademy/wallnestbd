@@ -414,6 +414,7 @@ async function addToCart(id) {
       body: JSON.stringify({ productId: id, quantity: 1 }),
     });
     document.getElementById('cartCount').textContent = data.count;
+    updateStoreMobileNavBadges();
     const p = products.find((x) => x.id === id) || { name: 'Product' };
     showToast(`✅ "${p.name}" কার্টে যোগ হয়েছে!`);
     await refreshCart();
@@ -424,13 +425,14 @@ async function addToCart(id) {
 
 async function buyNow(id) {
   await addToCart(id);
-  toggleCart();
+  window.location.href = '/checkout';
 }
 
 async function refreshCart() {
   try {
     const { items, count, subtotal } = await api('/cart');
     document.getElementById('cartCount').textContent = count;
+    updateStoreMobileNavBadges();
     renderCartItems(items, subtotal);
   } catch (e) {
     console.error(e);
@@ -538,11 +540,59 @@ function selectPayment(key) {
   `;
 }
 
-async function openCheckout() {
-  await refreshCart();
+function renderCheckoutOrderSummary(items, subtotal) {
+  const page = document.getElementById('checkoutPage');
+  if (!page) return;
+
+  const emptyEl = document.getElementById('checkoutEmpty');
+  const layoutEl = document.getElementById('checkoutLayout');
+  const itemsEl = document.getElementById('checkoutOrderItems');
+
+  if (!items.length) {
+    if (emptyEl) emptyEl.hidden = false;
+    if (layoutEl) layoutEl.hidden = true;
+    return;
+  }
+
+  if (emptyEl) emptyEl.hidden = true;
+  if (layoutEl) layoutEl.hidden = false;
+
+  const lineSubtotal = cartLineSubtotal(items, subtotal);
+  const shipping = calcShipping(lineSubtotal);
+  checkoutTotal = lineSubtotal + shipping;
+
+  if (itemsEl) {
+    itemsEl.innerHTML = items
+      .map(
+        (item) => `
+      <li class="checkout-order-item">
+        <div class="checkout-order-item-img">${item.imageUrl ? `<img src="${item.imageUrl}" alt="">` : item.icon}</div>
+        <div class="checkout-order-item-body">
+          <div class="checkout-order-item-name">${escapeHtml(truncateTitle(item.displayName || item.name))}</div>
+          <div class="checkout-order-item-meta">${formatBDT(item.price)} × ${item.qty}</div>
+        </div>
+        <div class="checkout-order-item-price">${formatBDT(item.price * item.qty)}</div>
+      </li>`
+      )
+      .join('');
+  }
+
+  const subtotalEl = document.getElementById('checkoutSubtotal');
+  const shippingEl = document.getElementById('checkoutShipping');
+  const grandEl = document.getElementById('checkoutGrandTotal');
+  if (subtotalEl) subtotalEl.textContent = formatBDT(lineSubtotal);
+  if (shippingEl) {
+    shippingEl.textContent = shipping === 0 ? 'ফ্রি' : formatBDT(shipping);
+    shippingEl.classList.toggle('is-free', shipping === 0);
+  }
+  if (grandEl) grandEl.textContent = formatBDT(checkoutTotal);
+}
+
+async function prepareCheckoutForm() {
   await loadPaymentMethods();
   selectedPayment = null;
-  document.getElementById('paymentDetails').style.display = 'none';
+  const paymentDetails = document.getElementById('paymentDetails');
+  if (paymentDetails) paymentDetails.style.display = 'none';
   renderPaymentOptions();
 
   const emailGroup = document.getElementById('checkoutEmailGroup');
@@ -565,8 +615,26 @@ async function openCheckout() {
     if (emailGroup) emailGroup.style.display = '';
     if (emailInput) emailInput.required = true;
   }
+}
 
-  openModal('checkoutModal');
+async function initCheckoutPage() {
+  await prepareCheckoutForm();
+  try {
+    const { items, count, subtotal } = await api('/cart');
+    const cartCountEl = document.getElementById('cartCount');
+    if (cartCountEl) cartCountEl.textContent = count;
+    updateStoreMobileNavBadges();
+    renderCheckoutOrderSummary(items, subtotal);
+    renderPaymentOptions();
+  } catch (e) {
+    console.error(e);
+  }
+}
+
+window.initCheckoutPage = initCheckoutPage;
+
+async function openCheckout() {
+  window.location.href = '/checkout';
 }
 
 async function changeQty(cartItemId, delta) {
@@ -577,6 +645,7 @@ async function changeQty(cartItemId, delta) {
     });
     renderCartItems(data.items, data.subtotal);
     document.getElementById('cartCount').textContent = data.count;
+    updateStoreMobileNavBadges();
   } catch (e) {
     showToast(e.message, 'warning');
   }
@@ -587,6 +656,7 @@ async function removeFromCart(cartItemId) {
     const data = await api(`/cart/${cartItemId}`, { method: 'DELETE' });
     renderCartItems(data.items, data.subtotal);
     document.getElementById('cartCount').textContent = data.count;
+    updateStoreMobileNavBadges();
   } catch (e) {
     showToast(e.message, 'warning');
   }
@@ -622,6 +692,48 @@ function getWishlist() {
 
 function saveWishlist(list) {
   localStorage.setItem(WISH_KEY, JSON.stringify(list.slice(0, 24)));
+  updateStoreMobileNavBadges();
+}
+
+function updateStoreMobileNavBadges() {
+  const cartEl = document.getElementById('storeMnavCartBadge');
+  const wishEl = document.getElementById('storeMnavWishBadge');
+  const headerCart = document.getElementById('cartCount');
+  const cartCount = Number(headerCart?.textContent || 0);
+  if (cartEl) {
+    if (cartCount > 0) {
+      cartEl.textContent = String(cartCount);
+      cartEl.hidden = false;
+    } else {
+      cartEl.hidden = true;
+    }
+  }
+  const wishCount = getWishlist().length;
+  if (wishEl) {
+    if (wishCount > 0) {
+      wishEl.textContent = String(wishCount);
+      wishEl.hidden = false;
+    } else {
+      wishEl.hidden = true;
+    }
+  }
+}
+
+function bindStoreMobileNav() {
+  if (window.__wnStoreMobileNavBound) return;
+  window.__wnStoreMobileNavBound = true;
+
+  document.addEventListener('click', (e) => {
+    if (e.target.closest('#storeMnavCategories')) {
+      e.preventDefault();
+      openNavMenu();
+      return;
+    }
+    if (e.target.closest('#storeMnavCart')) {
+      e.preventDefault();
+      toggleCart();
+    }
+  });
 }
 
 function toggleFav(btn) {
@@ -681,7 +793,9 @@ async function placeOrder(e) {
         customer_note: document.getElementById('customerNote').value,
       }),
     });
-    closeModal('checkoutModal');
+    if (document.getElementById('checkoutModal')) {
+      closeModal('checkoutModal');
+    }
     await refreshCart();
     showToast(`🎉 অর্ডার ${data.orderNumber} জমা হয়েছে! পেমেন্ট যাচাই হচ্ছে`);
     setTimeout(() => {
@@ -891,6 +1005,7 @@ async function refreshNavContext() {
     const el = document.getElementById('cartCount');
     if (el && typeof data.cartCount === 'number') {
       el.textContent = String(data.cartCount);
+      updateStoreMobileNavBadges();
     }
     patchHeaderAuth(data.user);
   } catch {
@@ -1055,7 +1170,10 @@ function bootStoreCarousels() {
     bootHomePage();
   }
   document.addEventListener('wn:fast-page', () => {
-    requestAnimationFrame(bootHomePage);
+    requestAnimationFrame(() => {
+      bootHomePage();
+      updateStoreMobileNavBadges();
+    });
   });
 }
 
@@ -1064,6 +1182,8 @@ bootStoreCarousels();
 refreshCart();
 loadPaymentMethods();
 refreshNavContext();
+bindStoreMobileNav();
+updateStoreMobileNavBadges();
 
 if (new URLSearchParams(location.search).get('login') === '1') {
   openModal('loginModal');
@@ -1076,6 +1196,8 @@ window.login = login;
 window.register = register;
 window.logout = logout;
 window.toggleCart = toggleCart;
+window.openNavMenu = openNavMenu;
+window.updateStoreMobileNavBadges = updateStoreMobileNavBadges;
 window.patchHeaderAuth = patchHeaderAuth;
 window.refreshNavContext = refreshNavContext;
 window.clearPageCaches = clearPageCaches;

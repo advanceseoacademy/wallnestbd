@@ -2,6 +2,7 @@
 let categories = [];
 let productImages = [];
 let productSizes = [];
+let descriptionEditor = null;
 
 const DEFAULT_SIZE_ROWS = [
   { label: '6×8"', price: '', original: '', stock: 50 },
@@ -12,6 +13,53 @@ const DEFAULT_SIZE_ROWS = [
 
 function getProductIdFromUrl() {
   return new URLSearchParams(window.location.search).get('id') || '';
+}
+
+function initDescriptionEditor() {
+  const mount = document.getElementById('descriptionEditor');
+  if (!mount || typeof window.Quill !== 'function') return;
+  if (descriptionEditor) {
+    if (document.body.contains(descriptionEditor.root)) return;
+    descriptionEditor = null;
+  }
+  descriptionEditor = new window.Quill('#descriptionEditor', {
+    theme: 'snow',
+    placeholder: 'পণ্যের বিস্তারিত বিবরণ লিখুন…',
+    modules: {
+      toolbar: [
+        [{ header: [1, 2, 3, false] }],
+        ['bold', 'italic', 'underline'],
+        ['link'],
+        [{ list: 'ordered' }, { list: 'bullet' }],
+        ['clean'],
+      ],
+    },
+  });
+  descriptionEditor.on('text-change', () => {
+    const hidden = document.getElementById('description');
+    if (hidden) hidden.value = getDescriptionHtml();
+  });
+}
+
+function getDescriptionHtml() {
+  if (descriptionEditor) {
+    const html = descriptionEditor.root.innerHTML.trim();
+    return html === '<p><br></p>' ? '' : html;
+  }
+  return document.getElementById('description')?.value?.trim() || '';
+}
+
+function setDescriptionHtml(html) {
+  const value = html || '';
+  const hidden = document.getElementById('description');
+  if (hidden) hidden.value = value;
+  if (descriptionEditor) {
+    if (!value) {
+      descriptionEditor.setText('');
+      return;
+    }
+    descriptionEditor.root.innerHTML = value;
+  }
 }
 
 function setProductSizes(rows) {
@@ -178,7 +226,7 @@ function fillProductForm(product) {
     sizes.map((s) => ({ price: s.price, original_price: s.original, stock: s.stock }))
   );
   document.getElementById('icon').value = product?.icon || '📦';
-  document.getElementById('description').value = product?.desc || '';
+  setDescriptionHtml(product?.desc || '');
   document.getElementById('isFeatured').checked = product?.featured !== false;
   document.getElementById('isFlash').checked = !!product?.flash;
   const images =
@@ -209,6 +257,7 @@ async function loadProductForEdit(productId) {
 }
 
 async function reloadFormDataOnly() {
+  initDescriptionEditor();
   const path = window.location.pathname.replace(/\/$/, '');
   const isNew = path.endsWith('/products/new');
   const productId = document.getElementById('productId')?.value || getProductIdFromUrl();
@@ -230,9 +279,7 @@ async function initProductFormPage() {
   }
   form.dataset.wnBound = '1';
 
-  const path = window.location.pathname.replace(/\/$/, '');
-  const isNew = path.endsWith('/products/new');
-  const productId = document.getElementById('productId')?.value || getProductIdFromUrl();
+  initDescriptionEditor();
 
   document.getElementById('btnAddSize')?.addEventListener('click', () => {
     productSizes.push({ label: '', price: '', original: '', stock: 20 });
@@ -277,7 +324,7 @@ async function initProductFormPage() {
       icon: document.getElementById('icon').value,
       images: productImages,
       image_url: productImages[0] || null,
-      description: document.getElementById('description').value,
+      description: getDescriptionHtml(),
       is_featured: document.getElementById('isFeatured').checked,
       is_flash_sale: document.getElementById('isFlash').checked,
     };
@@ -301,6 +348,10 @@ async function initProductFormPage() {
       }
     }
   });
+
+  const path = window.location.pathname.replace(/\/$/, '');
+  const isNew = path.endsWith('/products/new');
+  const productId = document.getElementById('productId')?.value || getProductIdFromUrl();
 
   if (isNew) {
     const { categories: cats } = await adminApi('/categories');

@@ -1,0 +1,20 @@
+<nav class="store-mobile-nav only-mobile" id="storeMobileNav" aria-label="দ্রুত মেনু">
+  <button type="button" class="store-mnav-item" id="storeMnavCategories" aria-label="ক্যাটাগরি খুলুন">
+    <span class="store-mnav-icon" aria-hidden="true">☰</span>
+    <span class="store-mnav-label">ক্যাটাগরি</span>
+  </button>
+  <button type="button" class="store-mnav-item" id="storeMnavCart" aria-label="কার্ট">
+    <span class="store-mnav-icon" aria-hidden="true">🛒</span>
+    <span class="store-mnav-label">কার্ট</span>
+    <span class="store-mnav-badge" id="storeMnavCartBadge" hidden>0</span>
+  </button>
+  <a href="/account?tab=wishlist" class="store-mnav-item" id="storeMnavWishlist">
+    <span class="store-mnav-icon" aria-hidden="true">❤️</span>
+    <span class="store-mnav-label">উইশলিস্ট</span>
+    <span class="store-mnav-badge" id="storeMnavWishBadge" hidden>0</span>
+  </a>
+  <a href="/account" class="store-mnav-item<%= typeof activeNav !== 'undefined' && activeNav === 'account' ? ' is-active' : '' %>">
+    <span class="store-mnav-icon" aria-hidden="true">👤</span>
+    <span class="store-mnav-label">ড্যাশবোর্ড</span>
+  </a>
+</nav>

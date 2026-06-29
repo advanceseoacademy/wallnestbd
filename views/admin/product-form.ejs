@@ -61,8 +61,12 @@
         </div>
 
         <div class="form-group">
-          <label class="form-label" for="description">বিবরণ</label>
-          <textarea class="form-input" id="description" rows="5"></textarea>
+          <label class="form-label">বিবরণ</label>
+          <div class="rich-editor-wrap">
+            <div id="descriptionEditor"></div>
+          </div>
+          <textarea id="description" hidden aria-hidden="true"></textarea>
+          <small class="form-hint">হেডিং, বোল্ড, ইটালিক, আন্ডারলাইন, লিংক ও লিস্ট ব্যবহার করতে পারবেন।</small>
         </div>
 
         <div class="form-checks">
@@ -103,11 +107,18 @@
 .product-sizes-head span { font-size: 11px; font-weight: 600; color: var(--muted2); }
 .product-size-row-admin { display: grid; grid-template-columns: 1.4fr 0.9fr 0.9fr 0.7fr auto; gap: 8px; align-items: center; }
 .product-size-row-admin input { padding: 8px; font-size: 12px; }
+.rich-editor-wrap { background: var(--surface2); border: 1px solid var(--border); border-radius: 8px; overflow: hidden; }
+.rich-editor-wrap .ql-toolbar.ql-snow { border: none; border-bottom: 1px solid var(--border); background: var(--surface); font-family: inherit; }
+.rich-editor-wrap .ql-container.ql-snow { border: none; font-family: inherit; font-size: 15px; }
+.rich-editor-wrap .ql-editor { min-height: 200px; line-height: 1.65; color: var(--text); }
+.rich-editor-wrap .ql-editor.ql-blank::before { color: var(--muted); font-style: normal; }
 @media (max-width: 720px) {
   .form-grid { grid-template-columns: 1fr; }
   .product-size-row-admin { grid-template-columns: 1fr 1fr; }
 }
 </style>
+<link href="https://cdn.jsdelivr.net/npm/quill@2.0.3/dist/quill.snow.css" rel="stylesheet">
+<script src="https://cdn.jsdelivr.net/npm/quill@2.0.3/dist/quill.js"></script>
 <script src="/js/admin-common.js"></script>
-<script src="/js/admin-product-form.js?v=2"></script>
+<script src="/js/admin-product-form.js?v=3"></script>
 </body></html>

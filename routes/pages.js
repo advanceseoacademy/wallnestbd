@@ -6,6 +6,7 @@ const {
   getReviewsPageData,
   getNewArrivalsPageData,
   getTrackOrderPageData,
+  getCheckoutPageData,
 } = require('../lib/storeData');
 const {
   getSiteUrl,
@@ -15,6 +16,7 @@ const {
   seoForReviews,
   seoForNewArrivals,
   seoForTrackOrder,
+  seoNoIndex,
 } = require('../lib/seo');
 const { isCatalogCategory } = require('../lib/catalogCategories');
 const { buildSitemapXml } = require('../lib/sitemap');
@@ -79,6 +81,18 @@ router.get('/track-order', async (req, res) => {
     const siteUrl = getSiteUrl(req);
     const seo = seoForTrackOrder(siteUrl);
     res.render('track-order', { ...data, seo, siteUrl });
+  } catch (err) {
+    console.error(err);
+    res.status(500).render('error', { message: err.message });
+  }
+});
+
+router.get('/checkout', async (req, res) => {
+  try {
+    const data = await getCheckoutPageData(req);
+    const siteUrl = getSiteUrl(req);
+    const seo = seoNoIndex('চেকআউট');
+    res.render('checkout', { ...data, seo, siteUrl });
   } catch (err) {
     console.error(err);
     res.status(500).render('error', { message: err.message });

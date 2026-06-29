@@ -740,6 +740,13 @@ function bindDashboardEvents() {
   });
 }
 
+function applyAccountTabFromUrl() {
+  const tab = new URLSearchParams(location.search).get('tab');
+  if (!tab || !document.getElementById('page-' + tab)) return;
+  const btn = document.querySelector(`.dash-mnav-item[data-page="${CSS.escape(tab)}"]`);
+  showPage(tab, btn);
+}
+
 async function init() {
   syncAccountStickyOffset();
   applyTimeGreetings();
@@ -748,6 +755,7 @@ async function init() {
   if (window.__ACCOUNT__?.user) {
     applyAccountData(window.__ACCOUNT__);
     paintDashboardUI();
+    applyAccountTabFromUrl();
     finishAccountLoading();
     enrichWishlist()
       .then(() => paintLists())
@@ -760,6 +768,7 @@ async function init() {
     const data = await fetchAccount();
     applyAccountData(data);
     paintDashboardUI();
+    applyAccountTabFromUrl();
   } catch (err) {
     if (String(err.message).includes('লগইন')) {
       window.location.href = '/?login=1&next=/account';
@@ -808,6 +817,7 @@ window.refreshAccountDashboard = function refreshAccountDashboard() {
   if (window.__ACCOUNT__?.user) {
     applyAccountData(window.__ACCOUNT__);
     paintDashboardUI();
+    applyAccountTabFromUrl();
     finishAccountLoading();
     enrichWishlist()
       .then(() => paintLists())

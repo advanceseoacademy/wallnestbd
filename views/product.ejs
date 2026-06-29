@@ -10,7 +10,7 @@
 <meta name="description" content="<%= product.name %> — <%= product.desc ? product.desc.slice(0, 120) : 'WallNest BD' %>">
 <% } %>
 <link href="https://fonts.googleapis.com/css2?family=Hind+Siliguri:wght@300;400;500;600;700&family=DM+Sans:wght@300;400;500;600;700&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="/css/style.css?v=52">
+<link rel="stylesheet" href="/css/style.css?v=55">
 </head>
 <body>
 
@@ -99,7 +99,7 @@
           <span>ব্র্যান্ড: <strong>WallNest BD</strong></span>
         </div>
 
-        <p class="product-desc-short"><%= product.desc || '' %></p>
+        <p class="product-desc-short"><%= product.descPlain || product.desc || '' %></p>
 
         <div class="product-stock <%= product.stock > 0 ? 'in-stock' : 'out-stock' %>" id="productStockLine">
           <%= product.stock > 0 ? `✅ স্টকে আছে — ${(product.sizes && product.sizes[0]) ? product.sizes[0].stock : product.stock} পিস বাকি` : '❌ স্টক শেষ — শীঘ্রই আসছে' %>
@@ -143,7 +143,11 @@
       </div>
       <div class="product-tab-panel active" id="tab-desc">
         <h3>পণ্যের বিবরণ</h3>
-        <p><%= product.desc || 'এই পণ্যের বিস্তারিত বিবরণ শীঘ্রই যোগ করা হবে।' %></p>
+        <% if (product.descHtml) { %>
+        <div class="product-desc-rich"><%- product.descHtml %></div>
+        <% } else { %>
+        <p><%= product.descPlain || product.desc || 'এই পণ্যের বিস্তারিত বিবরণ শীঘ্রই যোগ করা হবে।' %></p>
+        <% } %>
       </div>
       <div class="product-tab-panel" id="tab-specs">
         <h3>স্পেসিফিকেশন</h3>

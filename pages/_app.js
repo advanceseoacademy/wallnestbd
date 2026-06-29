@@ -22,6 +22,7 @@ function isStoreRoute(pathname) {
     pathname === '/' ||
     pathname === '/new-arrivals' ||
     pathname === '/track-order' ||
+    pathname === '/checkout' ||
     pathname === '/reviews' ||
     pathname.startsWith('/product/') ||
     pathname.startsWith('/category/')
@@ -101,7 +102,7 @@ export default function App({ Component, pageProps }) {
       ) : null}
       {useStoreShell ? (
         <>
-          <Script src="/js/app.js?v=18" strategy="beforeInteractive" id="wn-store-app" />
+          <Script src="/js/app.js?v=20" strategy="beforeInteractive" id="wn-store-app" />
           <StorePage pageProps={pageProps} />
         </>
       ) : useAccountShell ? (

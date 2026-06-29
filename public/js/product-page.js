@@ -316,7 +316,7 @@
 
     window.buyNowWithQty = async function (id) {
       await addToCartWithQty(id);
-      toggleCart();
+      window.location.href = '/checkout';
     };
 
     function getSharePayload() {

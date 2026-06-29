@@ -9,7 +9,7 @@ import {
 } from './AccountPage';
 import { ensureAccountStylesheet } from '../lib/client/ensureAccountStylesheet';
 
-const STORE_PATHS = /^\/$|^\/new-arrivals$|^\/track-order$|^\/reviews$|^\/product\/[^/]+$|^\/category\/[^/]+$/;
+const STORE_PATHS = /^\/$|^\/new-arrivals$|^\/track-order$|^\/checkout$|^\/reviews$|^\/product\/[^/]+$|^\/category\/[^/]+$/;
 const ACCOUNT_PATH = '/account';
 
 const prefetchInflight = new Set();

@@ -26,7 +26,7 @@ class MyDocument extends Document {
           <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="anonymous" />
           {!skipStoreCss ? (
             <>
-              <link rel="stylesheet" href="/css/style.css?v=54" />
+              <link rel="stylesheet" href="/css/style.css?v=57" />
               <link
                 href="https://fonts.googleapis.com/css2?family=Hind+Siliguri:wght@300;400;500;600;700&family=DM+Sans:wght@300;400;500;600;700&display=swap"
                 rel="stylesheet"

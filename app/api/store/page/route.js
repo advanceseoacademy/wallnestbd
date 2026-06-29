@@ -8,7 +8,7 @@ import {
 } from '../../../../lib/storePageRender.js';
 
 const STORE_PATH =
-  /^\/$|^\/new-arrivals$|^\/track-order$|^\/reviews$|^\/product\/[^/]+$|^\/category\/[^/]+$/;
+  /^\/$|^\/new-arrivals$|^\/track-order$|^\/checkout$|^\/reviews$|^\/product\/[^/]+$|^\/category\/[^/]+$/;
 
 async function getReqLike(request) {
   const response = new NextResponse();

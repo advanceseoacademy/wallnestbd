@@ -1,0 +1,81 @@
+<!DOCTYPE html>
+<html lang="bn">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<%- include('partials/favicon') %>
+<%- include('partials/seo-meta', { seo: typeof seo !== 'undefined' ? seo : null, siteUrl: typeof siteUrl !== 'undefined' ? siteUrl : '' }) %>
+<% if (typeof seo === 'undefined' || !seo) { %><title>চেকআউট — WallNest BD</title><% } %>
+<link href="https://fonts.googleapis.com/css2?family=Hind+Siliguri:wght@300;400;500;600;700&family=DM+Sans:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="/css/style.css?v=57">
+</head>
+<body>
+
+<%- include('partials/site-header', { categories, cartCount, user, activeNav: '', storeSettings }) %>
+
+<div class="site-wrap site-main checkout-page" id="checkoutPage">
+  <nav class="breadcrumb">
+    <a href="/">হোম</a> / <span>চেকআউট</span>
+  </nav>
+
+  <div class="section-header">
+    <h1 class="section-title">💳 চেকআউট — <span>ম্যানুয়াল পেমেন্ট</span></h1>
+    <a href="/" class="see-all checkout-back-link">← কেনাকাটা চালিয়ে যান</a>
+  </div>
+
+  <div id="checkoutEmpty" class="checkout-empty" hidden>
+    <div class="checkout-empty-icon">🛒</div>
+    <h2>কার্ট খালি আছে</h2>
+    <p>চেকআউট করতে আগে কার্টে পণ্য যোগ করুন।</p>
+    <a href="/" class="btn-primary">পণ্য দেখুন</a>
+  </div>
+
+  <div id="checkoutLayout" class="checkout-layout" hidden>
+    <aside class="checkout-summary-card">
+      <h2 class="checkout-card-title">অর্ডার সারাংশ</h2>
+      <ul class="checkout-order-items" id="checkoutOrderItems"></ul>
+      <div class="checkout-totals">
+        <div class="checkout-total-row"><span>সাবটোটাল</span><span id="checkoutSubtotal">৳0</span></div>
+        <div class="checkout-total-row"><span>শিপিং</span><span id="checkoutShipping" class="checkout-shipping-val">ফ্রি</span></div>
+        <div class="checkout-total-row grand"><span>মোট</span><span id="checkoutGrandTotal">৳0</span></div>
+      </div>
+    </aside>
+
+    <div class="checkout-form-card">
+      <form onsubmit="placeOrder(event)">
+        <p class="checkout-section-label">📦 ডেলিভারি ঠিকানা</p>
+        <div class="form-group"><label class="form-label">পূর্ণ নাম *</label><input type="text" class="form-input" id="shipName" required></div>
+        <div class="form-group"><label class="form-label">মোবাইল *</label><input type="text" class="form-input" id="shipPhone" placeholder="01XXXXXXXXX" required></div>
+        <div class="form-group" id="checkoutEmailGroup">
+          <label class="form-label">ইমেইল *</label>
+          <input type="email" class="form-input" id="checkoutEmail" placeholder="order@example.com" required>
+          <p class="checkout-field-hint">অর্ডার কনফার্মেশন ইমেইল এই ঠিকানায় পাঠানো হবে।</p>
+        </div>
+        <div class="form-group"><label class="form-label">ঠিকানা *</label><input type="text" class="form-input" id="shipAddress" required></div>
+        <div class="form-row">
+          <div class="form-group"><label class="form-label">জেলা/শহর</label><input type="text" class="form-input" id="shipCity"></div>
+          <div class="form-group"><label class="form-label">পোস্ট কোড</label><input type="text" class="form-input" id="shipZip"></div>
+        </div>
+
+        <p class="checkout-section-label">💰 পেমেন্ট পদ্ধতি (ম্যানুয়াল)</p>
+        <div id="paymentMethods" class="checkout-payment-methods"></div>
+        <div id="paymentDetails" class="checkout-payment-details" style="display:none;"></div>
+
+        <div class="form-group"><label class="form-label">পেমেন্ট করার নম্বর *</label><input type="text" class="form-input" id="paymentPhone" placeholder="যে নম্বর থেকে পেমেন্ট করেছেন" required></div>
+        <div class="form-group"><label class="form-label">Transaction ID *</label><input type="text" class="form-input" id="transactionId" placeholder="bKash/Rocket/Nagad Trx ID" required></div>
+        <div class="form-group"><label class="form-label">নোট (ঐচ্ছিক)</label><input type="text" class="form-input" id="customerNote"></div>
+
+        <p class="checkout-footnote">পেমেন্ট যাচাই হলে অর্ডার কনফার্ম হবে। ৳<%= ((storeSettings && storeSettings.freeShippingMin) || 1500).toLocaleString('en-US') %>+ অর্ডারে ফ্রি ডেলিভারি।</p>
+        <button class="btn-block checkout-submit-btn" type="submit">✅ অর্ডার কনফার্ম করুন</button>
+      </form>
+    </div>
+  </div>
+</div>
+
+<%- include('partials/site-footer', { storeSettings }) %>
+<%- include('partials/cart-modals', { storeSettings }) %>
+<script>window.__WN_STORE__ = <%- JSON.stringify(storeSettings || {}) %>;</script>
+<script src="/js/app.js?v=20"></script>
+<script src="/js/checkout-page.js?v=1"></script>
+</body>
+</html>
