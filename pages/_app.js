@@ -82,7 +82,7 @@ export default function App({ Component, pageProps }) {
               href="https://fonts.googleapis.com/css2?family=Syne:wght@400;500;600;700;800&family=Hind+Siliguri:wght@300;400;500;600;700&display=swap"
               rel="stylesheet"
             />
-            <link rel="stylesheet" href="/css/admin.css?v=8" />
+            <link rel="stylesheet" href="/css/admin.css?v=9" />
           </Head>
         </>
       ) : null}
