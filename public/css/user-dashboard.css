@@ -50,6 +50,10 @@ body.account-page {
   background: var(--bg);
   overflow-x: hidden;
   max-width: 100%;
+  font-family: 'Hind Siliguri', 'DM Sans', sans-serif;
+  font-size: 16px;
+  line-height: 1.55;
+  color: var(--text);
 }
 
 /* ── LAYOUT (same max width as site .site-wrap) ── */
@@ -293,7 +297,7 @@ body.account-page {
   z-index: 50;
   box-shadow: var(--shadow);
 }
-.dash-topbar-title { font-family: 'Playfair Display', serif; font-size: 18px; font-weight: 700; }
+.dash-topbar-title { font-family: 'Hind Siliguri', 'DM Sans', sans-serif; font-size: 1.25rem; font-weight: 700; }
 .dash-topbar-right { margin-left: auto; display: flex; align-items: center; gap: 10px; }
 .tb-btn {
   width: 38px; height: 38px;
@@ -1140,7 +1144,7 @@ body.account-page {
   }
 
   .welcome-sub {
-    font-size: 13px;
+    font-size: 15px;
     margin-bottom: 16px;
   }
 
@@ -1172,7 +1176,7 @@ body.account-page {
   }
 
   .ws-label {
-    font-size: 10px;
+    font-size: 13px;
   }
 
   .quick-actions {
@@ -1223,23 +1227,17 @@ body.account-page {
   .dash-mobile-nav-scroll {
     display: flex;
     align-items: stretch;
+    justify-content: space-around;
     gap: 4px;
-    overflow-x: auto;
-    overflow-y: hidden;
-    -webkit-overflow-scrolling: touch;
-    scrollbar-width: none;
-    padding: 0 8px;
-  }
-
-  .dash-mobile-nav-scroll::-webkit-scrollbar {
-    display: none;
+    overflow: hidden;
+    padding: 0 6px;
   }
 
   .dash-mnav-item {
     position: relative;
-    flex: 0 0 auto;
-    min-width: 68px;
-    max-width: 80px;
+    flex: 1 1 0;
+    min-width: 0;
+    max-width: none;
     display: flex;
     flex-direction: column;
     align-items: center;
@@ -1267,7 +1265,7 @@ body.account-page {
   }
 
   .dash-mnav-label {
-    font-size: 10px;
+    font-size: 12px;
     font-weight: 600;
     line-height: 1.2;
     white-space: nowrap;
@@ -1305,7 +1303,7 @@ body.account-page {
     left: 12px;
   }
 
-  .toast {
+  body.account-page .toast {
     max-width: none;
   }
 }
@@ -1324,7 +1322,7 @@ body.account-page {
   }
 
   .qa-label {
-    font-size: 11px;
+    font-size: 14px;
   }
 
   .welcome-right {
@@ -1344,15 +1342,25 @@ body.account-page {
   }
 }
 
-/* ── TOAST ── */
-.toast-area { position: fixed; bottom: 24px; right: 24px; z-index: 9999; display: flex; flex-direction: column; gap: 10px; }
-.toast {
+/* ── TOAST (account dashboard only) ── */
+body.account-page .toast-area {
+  position: fixed;
+  bottom: 24px;
+  right: 24px;
+  z-index: 9999;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+body.account-page .toast {
   background: var(--ink);
   color: white;
   border-radius: var(--r-sm);
   padding: 12px 18px;
   font-size: 13.5px;
-  display: flex; align-items: center; gap: 10px;
+  display: flex;
+  align-items: center;
+  gap: 10px;
   box-shadow: var(--shadow-lg);
   animation: slideUp 0.3s ease;
   max-width: 320px;
@@ -1574,6 +1582,65 @@ body.account-page {
 .logout-btn:hover {
   border-color: #fecaca;
 }
+
+/* ── Site typography sync (match style.css body scale) ── */
+.account-dashboard .nav-item { font-size: 15px; }
+.account-dashboard .nav-badge { font-size: 12px; }
+.account-dashboard .user-name { font-size: 16px; }
+.account-dashboard .user-email { font-size: 14px; }
+.account-dashboard .user-tier { font-size: 13px; }
+.account-dashboard .logout-btn { font-size: 15px; }
+.account-dashboard .greeting-chip { font-size: 14px; }
+.account-dashboard .welcome-hi { font-size: 14px; }
+.account-dashboard .welcome-sub { font-size: 15px; }
+.account-dashboard .btn-hero,
+.account-dashboard .btn-hero-ghost { font-size: 15px; }
+.account-dashboard .ws-label { font-size: 13px; }
+.account-dashboard .qa-label { font-size: 14px; }
+.account-dashboard .card-title {
+  font-family: 'Hind Siliguri', 'DM Sans', sans-serif;
+  font-size: 16px;
+}
+.account-dashboard .card-link { font-size: 14px; }
+.account-dashboard .order-name { font-size: 16px; }
+.account-dashboard .order-id { font-size: 13px; }
+.account-dashboard .order-price { font-size: 16px; }
+.account-dashboard .status-pill { font-size: 13px; }
+.account-dashboard .track-label { font-size: 13px; }
+.account-dashboard .addr-name { font-size: 16px; }
+.account-dashboard .addr-text { font-size: 14px; }
+.account-dashboard .addr-default { font-size: 12px; }
+.account-dashboard .btn-add,
+.account-dashboard .copy-btn { font-size: 15px; }
+.account-dashboard .wish-name { font-size: 16px; }
+.account-dashboard .wish-price { font-size: 16px; }
+.account-dashboard .wish-old { font-size: 13px; }
+.account-dashboard .wish-btn { font-size: 15px; }
+.account-dashboard .reward-label,
+.account-dashboard .reward-sub { font-size: 14px; }
+.account-dashboard .reward-progress-label { font-size: 13px; }
+.account-dashboard .reward-btn { font-size: 14px; }
+.account-dashboard .notif-text { font-size: 15px; }
+.account-dashboard .notif-time { font-size: 13px; }
+.account-dashboard .profile-info h3 {
+  font-family: 'Hind Siliguri', 'DM Sans', sans-serif;
+  font-size: 1.25rem;
+}
+.account-dashboard .profile-info p { font-size: 15px; }
+.account-dashboard .form-label { font-size: 14px; }
+.account-dashboard .form-input,
+.account-dashboard .form-select,
+.account-dashboard .form-textarea { font-size: 16px; }
+.account-dashboard .btn-primary,
+.account-dashboard .btn-secondary,
+.account-dashboard .btn-outline { font-size: 15px; }
+.account-dashboard .coupon-code { font-size: 15px; }
+.account-dashboard .coupon-desc { font-size: 14px; }
+.account-dashboard .coupon-expiry { font-size: 13px; }
+.account-dashboard .coupon-off { font-size: 12px; }
+.account-dashboard .ui-empty-text { font-size: 15px; }
+.account-dashboard .ui-empty-link { font-size: 15px; }
+.account-dashboard .toast { font-size: 15px; }
 
 /* Loading — only dashboard area (header/footer stay visible) */
 body.account-loading .account-dashboard .layout {

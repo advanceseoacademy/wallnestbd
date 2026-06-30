@@ -5,7 +5,11 @@ import { useRouter } from 'next/router';
 import Script from 'next/script';
 import SeoHead from './SeoHead';
 
-const CACHE_PREFIX = 'wn_page_v5:';
+const STORE_APP_SCRIPT = /^\/js\/app\.js(\?|$)/;
+
+function isStoreAppScript(src) {
+  return STORE_APP_SCRIPT.test(src || '');
+}
 const CACHE_TTL_MS = 3 * 60 * 1000;
 
 export function readPageCache(path) {
@@ -46,9 +50,13 @@ export function writePageCache(path, props) {
 }
 
 export function patchNavFromApi(data) {
-  const el = document.getElementById('cartCount');
-  if (el && typeof data.cartCount === 'number') {
-    el.textContent = String(data.cartCount);
+  if (typeof data.cartCount === 'number') {
+    if (typeof window.setCartCount === 'function') {
+      window.setCartCount(data.cartCount);
+    } else {
+      const el = document.getElementById('cartCount');
+      if (el) el.textContent = String(data.cartCount);
+    }
   }
   if (typeof window.patchHeaderAuth === 'function') {
     window.patchHeaderAuth(data.user);
@@ -103,8 +111,20 @@ export default function StorePage({ pageProps }) {
     if (typeof window.initProductPage === 'function' && window.__PRODUCT_PAGE__) {
       window.initProductPage();
     }
+    if (typeof window.initCheckoutPage === 'function') {
+      window.initCheckoutPage();
+    }
+    if (typeof window.initCartPage === 'function') {
+      window.initCartPage();
+    }
     if (typeof window.initTrackOrderPage === 'function') {
       window.initTrackOrderPage();
+    }
+    if (typeof window.mountMobileMenu === 'function') {
+      window.mountMobileMenu();
+    }
+    if (typeof window.syncStoreMobileNavActive === 'function') {
+      window.syncStoreMobileNavActive();
     }
   }, [live.bodyHtml, live.inlineScripts]);
 
@@ -129,7 +149,7 @@ export default function StorePage({ pageProps }) {
         />
       ) : null}
       {scriptSrcs
-        ?.filter((src) => src !== '/js/app.js')
+        ?.filter((src) => !isStoreAppScript(src))
         .map((src) => (
           <Script key={`${router.asPath}-${src}`} src={src} strategy="afterInteractive" />
         ))}

@@ -31,7 +31,7 @@
       <% } %>
     </div>
     <div class="product-footer">
-      <button type="button" class="btn-add-cart" onclick="event.preventDefault(); event.stopPropagation(); addToCart(<%= JSON.stringify(p.id) %>)">🛒 কার্টে যোগ</button>
+      <button type="button" class="btn-add-cart" data-product-id="<%= p.id %>" onclick="event.preventDefault(); event.stopPropagation(); addToCart(<%= JSON.stringify(p.id) %>)">🛒 কার্টে যোগ</button>
       <button type="button" class="btn-buy-now" onclick="event.preventDefault(); event.stopPropagation(); buyNow(<%= JSON.stringify(p.id) %>)">Buy Now</button>
     </div>
   </div>

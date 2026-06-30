@@ -61,7 +61,7 @@ function formatStatNum(n) {
 }
 
 function paymentLabel(method) {
-  return { bkash: 'bKash', rocket: 'Rocket', nagad: 'Nagad' }[method] || method || '-';
+  return { bkash: 'bKash', rocket: 'Rocket', nagad: 'Nagad', cod: 'Cash on Delivery' }[method] || method || '-';
 }
 
 function paymentStatusBadge(status) {

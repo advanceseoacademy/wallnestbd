@@ -3,11 +3,11 @@
     <span class="store-mnav-icon" aria-hidden="true">☰</span>
     <span class="store-mnav-label">ক্যাটাগরি</span>
   </button>
-  <button type="button" class="store-mnav-item" id="storeMnavCart" aria-label="কার্ট">
+  <a href="/cart" class="store-mnav-item<%= typeof activeNav !== 'undefined' && activeNav === 'cart' ? ' is-active' : '' %>" id="storeMnavCart" aria-label="কার্ট">
     <span class="store-mnav-icon" aria-hidden="true">🛒</span>
     <span class="store-mnav-label">কার্ট</span>
     <span class="store-mnav-badge" id="storeMnavCartBadge" hidden>0</span>
-  </button>
+  </a>
   <a href="/account?tab=wishlist" class="store-mnav-item" id="storeMnavWishlist">
     <span class="store-mnav-icon" aria-hidden="true">❤️</span>
     <span class="store-mnav-label">উইশলিস্ট</span>

@@ -109,7 +109,7 @@ export default function AccountPage({ pageProps }) {
         />
       ) : null}
       {scriptSrcs
-        ?.filter((src) => src !== '/js/app.js')
+        ?.filter((src) => !/^\/js\/app\.js(\?|$)/.test(src || ''))
         .map((src) => (
           <Script
             key={`${contentKey}-${src}`}
@@ -118,7 +118,6 @@ export default function AccountPage({ pageProps }) {
             onLoad={refreshDashboard}
           />
         ))}
-      <Script src="/js/app.js?v=18" strategy="beforeInteractive" id="wn-store-app-account" />
     </>
   );
 }

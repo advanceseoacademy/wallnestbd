@@ -785,14 +785,8 @@ async function init() {
 }
 
 function syncAccountStickyOffset() {
-  const topbar = document.querySelector('.topbar');
-  const header = document.querySelector('header');
-  const nav = document.querySelector('nav');
-  const offset =
-    (topbar?.offsetHeight || 0) +
-    (header?.offsetHeight || 0) +
-    (nav?.offsetHeight || 0) +
-    8;
+  const shell = document.querySelector('.site-header-sticky');
+  const offset = (shell?.offsetHeight || 0) + 8;
   document.documentElement.style.setProperty('--wn-stick-top', `${offset}px`);
 }
 

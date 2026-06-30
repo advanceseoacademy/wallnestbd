@@ -14,6 +14,22 @@
   window.location.replace(`/auth/callback?${qs.toString()}`);
 })();
 
+(function wallNestStoreApp() {
+  if (window.__WN_APP_READY__) {
+    requestAnimationFrame(() => {
+      if (typeof window.mountMobileMenu === 'function') window.mountMobileMenu();
+      if (typeof window.refreshCart === 'function') window.refreshCart();
+      if (typeof window.syncStoreMobileNavActive === 'function') window.syncStoreMobileNavActive();
+      if (typeof window.updateStoreMobileNavBadges === 'function') window.updateStoreMobileNavBadges();
+      if (typeof window.refreshAccountDashboard === 'function') window.refreshAccountDashboard();
+      if (typeof window.initCheckoutPage === 'function') window.initCheckoutPage();
+      if (typeof window.initCartPage === 'function') window.initCartPage();
+      if (typeof window.initTrackOrderPage === 'function') window.initTrackOrderPage();
+    });
+    return;
+  }
+  window.__WN_APP_READY__ = true;
+
 const products = window.__PRODUCTS__ || [];
 let activeCategory = 'all';
 let paymentSettings = {};
@@ -25,12 +41,48 @@ function getStoreShippingConfig() {
   return {
     freeShippingMin: Number(cfg.freeShippingMin) || 1500,
     shippingFee: Number(cfg.shippingFee) || 80,
+    insideDhakaFee: Number(cfg.insideDhakaFee ?? cfg.shippingFee) || 60,
+    outsideDhakaFee: Number(cfg.outsideDhakaFee ?? cfg.shippingFee) || 120,
   };
 }
 
-function calcShipping(subtotal) {
-  const { freeShippingMin, shippingFee } = getStoreShippingConfig();
-  return Number(subtotal) >= freeShippingMin ? 0 : shippingFee;
+function getSelectedDeliveryArea() {
+  const checked = document.querySelector('input[name="deliveryArea"]:checked');
+  return checked?.value || 'inside_dhaka';
+}
+
+function calcShipping(subtotal, deliveryArea) {
+  const { freeShippingMin, insideDhakaFee, outsideDhakaFee } = getStoreShippingConfig();
+  if (Number(subtotal) >= freeShippingMin) return 0;
+  const area = deliveryArea || getSelectedDeliveryArea();
+  return area === 'outside_dhaka' ? outsideDhakaFee : insideDhakaFee;
+}
+
+function updateDeliveryAreaFeeLabels(subtotal = 0) {
+  const { freeShippingMin, insideDhakaFee, outsideDhakaFee } = getStoreShippingConfig();
+  const insideEl = document.getElementById('insideDhakaFeeLabel');
+  const outsideEl = document.getElementById('outsideDhakaFeeLabel');
+  const label = (fee) =>
+    Number(subtotal) >= freeShippingMin ? 'ফ্রি' : formatBDT(fee);
+  if (insideEl) insideEl.textContent = label(insideDhakaFee);
+  if (outsideEl) outsideEl.textContent = label(outsideDhakaFee);
+}
+
+function bindDeliveryAreaEvents() {
+  const box = document.getElementById('deliveryAreaOptions');
+  if (!box || box.dataset.bound === '1') return;
+  box.dataset.bound = '1';
+  box.addEventListener('change', (e) => {
+    if (e.target.name !== 'deliveryArea') return;
+    if (window.__cartItems) {
+      const subtotal = cartLineSubtotal(
+        window.__cartItems,
+        window.__cartItems.reduce((s, i) => s + i.price * i.qty, 0)
+      );
+      renderCheckoutOrderSummary(window.__cartItems, subtotal);
+    }
+    if (selectedPayment) selectPayment(selectedPayment);
+  });
 }
 
 function formatBDT(n) {
@@ -95,7 +147,7 @@ function productCardHtml(p) {
           ${p.original > p.price ? `<span class="price-original">${formatBDT(p.original)}</span><span class="price-save">সেভ ${formatBDT(p.original - p.price)}</span>` : ''}
         </div>
         <div class="product-footer">
-          <button type="button" class="btn-add-cart" onclick="event.preventDefault(); event.stopPropagation(); addToCart(${JSON.stringify(p.id)})">🛒 কার্টে যোগ</button>
+          <button type="button" class="btn-add-cart" data-product-id="${p.id}" onclick="event.preventDefault(); event.stopPropagation(); addToCart(${JSON.stringify(p.id)})">🛒 কার্টে যোগ</button>
           <button type="button" class="btn-buy-now" onclick="event.preventDefault(); event.stopPropagation(); buyNow(${JSON.stringify(p.id)})">Buy Now</button>
         </div>
       </div>
@@ -184,8 +236,13 @@ function applyCategoryFromUrl() {
 }
 
 function mountMobileMenu() {
-  const menu = document.getElementById('mobileMenu');
-  if (menu && menu.parentElement !== document.body) {
+  const menus = [...document.querySelectorAll('#mobileMenu')];
+  if (!menus.length) return;
+  const menu = menus[menus.length - 1];
+  menus.forEach((node) => {
+    if (node !== menu) node.remove();
+  });
+  if (menu.parentElement !== document.body) {
     document.body.appendChild(menu);
   }
 }
@@ -245,7 +302,7 @@ async function openNavMenu() {
 
 function bindNavMenu() {
   if (window.__wnNavMenuBound) return;
-  if (!document.getElementById('navMenuToggle')) return;
+  if (!document.getElementById('mobileMenu')) return;
   window.__wnNavMenuBound = true;
 
   document.addEventListener('click', (e) => {
@@ -377,6 +434,7 @@ function bootHomePage() {
   refreshReviewSeeMore();
 }
 
+window.mountMobileMenu = mountMobileMenu;
 mountMobileMenu();
 hydrateMobileMenuCategories();
 bindNavMenu();
@@ -413,8 +471,7 @@ async function addToCart(id) {
       method: 'POST',
       body: JSON.stringify({ productId: id, quantity: 1 }),
     });
-    document.getElementById('cartCount').textContent = data.count;
-    updateStoreMobileNavBadges();
+    setCartCount(data.count);
     const p = products.find((x) => x.id === id) || { name: 'Product' };
     showToast(`✅ "${p.name}" কার্টে যোগ হয়েছে!`);
     await refreshCart();
@@ -431,12 +488,60 @@ async function buyNow(id) {
 async function refreshCart() {
   try {
     const { items, count, subtotal } = await api('/cart');
-    document.getElementById('cartCount').textContent = count;
-    updateStoreMobileNavBadges();
+    setCartCount(count);
     renderCartItems(items, subtotal);
+    updateAddToCartButtonStates(items);
   } catch (e) {
     console.error(e);
   }
+}
+
+const CART_BTN_LABEL = {
+  default: '🛒 কার্টে যোগ',
+  defaultLg: '🛒 কার্টে যোগ করুন',
+  inCart: '✅ কার্টে আছে',
+};
+
+function productInCart(items, productId, sizeLabel = '') {
+  const pid = String(productId);
+  const size = String(sizeLabel || '').trim();
+  if (size) {
+    return (items || []).some(
+      (i) => String(i.id) === pid && String(i.sizeLabel || '').trim() === size
+    );
+  }
+  return (items || []).some((i) => String(i.id) === pid);
+}
+
+function setAddToCartButtonState(btn, inCart) {
+  if (!btn) return;
+  if (btn.disabled) {
+    btn.classList.remove('in-cart');
+    return;
+  }
+  const isLarge = btn.classList.contains('btn-lg');
+  const defaultText = isLarge ? CART_BTN_LABEL.defaultLg : CART_BTN_LABEL.default;
+  btn.classList.toggle('in-cart', inCart);
+  btn.textContent = inCart ? CART_BTN_LABEL.inCart : defaultText;
+  btn.setAttribute('aria-pressed', inCart ? 'true' : 'false');
+}
+
+function updateAddToCartButtonStates(items = []) {
+  window.__cartItems = items;
+  document
+    .querySelectorAll('.product-footer .btn-add-cart, .product-actions .btn-add-cart')
+    .forEach((btn) => {
+      const card = btn.closest('[data-product-id]');
+      const productId =
+        btn.dataset.productId || card?.dataset?.productId || window.__PRODUCT_PAGE__?.id;
+      if (!productId) return;
+      const isProductPageBtn = Boolean(btn.closest('.product-actions'));
+      const sizeLabel =
+        isProductPageBtn && typeof window.getSelectedSizeLabel === 'function'
+          ? window.getSelectedSizeLabel()
+          : '';
+      setAddToCartButtonState(btn, productInCart(items, productId, sizeLabel));
+    });
 }
 
 function cartLineSubtotal(items, subtotal) {
@@ -448,16 +553,36 @@ function renderCartItems(items, subtotal) {
   const container = document.getElementById('cartItems');
   const footer = document.getElementById('cartFooter');
   const headerCount = document.getElementById('cartHeaderCount');
+  const cartPage = document.getElementById('cartPage');
+  const emptyEl = document.getElementById('cartEmpty');
+  const layoutEl = document.getElementById('cartLayout');
+  const pageHeaderCount = document.getElementById('cartPageHeaderCount');
   const itemCount = items.reduce((sum, item) => sum + item.qty, 0);
+
+  if (cartPage) {
+    if (!items.length) {
+      if (emptyEl) emptyEl.hidden = false;
+      if (layoutEl) layoutEl.hidden = true;
+    } else {
+      if (emptyEl) emptyEl.hidden = true;
+      if (layoutEl) layoutEl.hidden = false;
+    }
+    if (pageHeaderCount) {
+      pageHeaderCount.textContent = itemCount ? `(${itemCount} আইটেম)` : '';
+    }
+  }
+
+  if (!container) return;
+
   if (!items.length) {
     container.innerHTML = `<div class="cart-empty"><div class="ce-icon">🛒</div><p>কার্ট খালি আছে</p><p class="cart-empty-sub">পছন্দের পণ্য কার্টে যোগ করুন</p></div>`;
-    footer.style.display = 'none';
+    if (footer && !cartPage) footer.style.display = 'none';
     if (headerCount) headerCount.textContent = '';
     return;
   }
-  footer.style.display = 'block';
+  if (footer && !cartPage) footer.style.display = 'block';
   const lineSubtotal = cartLineSubtotal(items, subtotal);
-  const shipping = calcShipping(lineSubtotal);
+  const shipping = calcShipping(lineSubtotal, 'inside_dhaka');
   checkoutTotal = lineSubtotal + shipping;
   if (headerCount) {
     headerCount.textContent = `${itemCount} আইটেম`;
@@ -469,7 +594,7 @@ function renderCartItems(items, subtotal) {
       <div class="cart-item-img">${item.imageUrl ? `<img src="${item.imageUrl}" alt="">` : item.icon}</div>
       <div class="cart-item-body">
         <div class="cart-item-top">
-          <div class="cart-item-name" title="${escapeHtml(item.displayName || item.name)}">${escapeHtml(truncateTitle(item.displayName || item.name))}</div>
+          <div class="cart-item-name">${escapeHtml(item.displayName || item.name)}</div>
           <button class="cart-item-remove" type="button" aria-label="সরান" onclick="removeFromCart('${item.cartItemId}')">✕</button>
         </div>
         <div class="cart-item-meta">
@@ -508,18 +633,32 @@ function renderPaymentOptions() {
     { key: 'bkash', label: 'bKash', color: '#E2136E' },
     { key: 'rocket', label: 'Rocket', color: '#8B2D9E' },
     { key: 'nagad', label: 'Nagad', color: '#F6921E' },
+    { key: 'cod', label: 'Cash on Delivery', color: '#2E7D32' },
   ];
   box.innerHTML = methods
     .filter((m) => paymentSettings[m.key]?.enabled !== false)
     .map(
       (m) => `
-    <label style="display:flex;align-items:center;gap:10px;padding:12px;border:2px solid var(--border);border-radius:8px;cursor:pointer;">
+    <label class="payment-method-option">
       <input type="radio" name="payMethod" value="${m.key}" onchange="selectPayment('${m.key}')">
-      <strong style="color:${m.color}">${m.label}</strong>
-      <span style="font-size:12px;color:var(--text-muted);">${paymentSettings[m.key]?.number || ''}</span>
+      <strong class="payment-method-name" style="color:${m.color}">${paymentSettings[m.key]?.label || m.label}</strong>
+      ${m.key === 'cod' ? '' : `<span class="payment-method-number">${paymentSettings[m.key]?.number || ''}</span>`}
     </label>`
     )
     .join('');
+}
+
+function setManualPaymentFieldsVisible(visible) {
+  const wrap = document.getElementById('manualPaymentFields');
+  const paymentPhone = document.getElementById('paymentPhone');
+  const transactionId = document.getElementById('transactionId');
+  if (wrap) wrap.style.display = visible ? '' : 'none';
+  if (paymentPhone) paymentPhone.required = visible;
+  if (transactionId) transactionId.required = visible;
+  if (!visible) {
+    if (paymentPhone) paymentPhone.value = '';
+    if (transactionId) transactionId.value = '';
+  }
 }
 
 function selectPayment(key) {
@@ -527,16 +666,37 @@ function selectPayment(key) {
   const p = paymentSettings[key];
   const el = document.getElementById('paymentDetails');
   if (!el || !p) return;
+  const isCod = key === 'cod';
+  setManualPaymentFieldsVisible(!isCod);
   const amount = checkoutTotal > 0 ? checkoutTotal : 0;
   el.style.display = 'block';
-  el.innerHTML = `
-    <strong>${p.label || key}</strong> — ${p.account_type || 'Personal'}<br>
-    নম্বর: <strong style="font-size:16px;color:var(--primary);">${p.number || 'অ্যাডমিনে সেট করুন'}</strong>
-    <div style="margin:10px 0 8px;padding:12px;background:#fff;border-radius:8px;border:1px solid rgba(0,113,206,.18);">
-      <div style="font-size:12px;color:var(--text-muted);margin-bottom:4px;">Send Money করুন (ঠিক এই পরিমাণ)</div>
-      <strong style="font-size:22px;color:var(--primary);letter-spacing:.02em;">${formatBDT(amount)}</strong>
+  if (isCod) {
+    el.innerHTML = `
+    <div class="payment-details-head payment-details-head--cod">
+      <strong class="payment-details-title">${p.label || 'Cash on Delivery'}</strong>
     </div>
-    <span style="color:var(--text-muted);">${p.instructions || 'উপরের নম্বরে ঠিক এই টাকা পাঠান, তারপর Transaction ID দিন।'}</span>
+    <div class="payment-details-amount-box payment-details-amount-box--cod">
+      <div class="payment-details-amount-label">ডেলিভারিতে পরিশোধ করুন</div>
+      <strong class="payment-details-amount">${formatBDT(amount)}</strong>
+    </div>
+    <p class="payment-details-instructions">${p.instructions || 'পণ্য হাতে পেয়ে কুরিয়ারকে ক্যাশে পেমেন্ট করুন।'}</p>
+  `;
+    return;
+  }
+  el.innerHTML = `
+    <div class="payment-details-head">
+      <strong class="payment-details-title">${p.label || key}</strong>
+      <span class="payment-details-type">${p.account_type || 'Personal'}</span>
+    </div>
+    <div class="payment-details-number-box">
+      <span class="payment-details-number-label">পেমেন্ট নম্বর</span>
+      <strong class="payment-details-number">${p.number || 'অ্যাডমিনে সেট করুন'}</strong>
+    </div>
+    <div class="payment-details-amount-box">
+      <div class="payment-details-amount-label">Send Money করুন (ঠিক এই পরিমাণ)</div>
+      <strong class="payment-details-amount">${formatBDT(amount)}</strong>
+    </div>
+    <p class="payment-details-instructions">${p.instructions || 'উপরের নম্বরে ঠিক এই টাকা পাঠান, তারপর Transaction ID দিন।'}</p>
   `;
 }
 
@@ -558,8 +718,9 @@ function renderCheckoutOrderSummary(items, subtotal) {
   if (layoutEl) layoutEl.hidden = false;
 
   const lineSubtotal = cartLineSubtotal(items, subtotal);
-  const shipping = calcShipping(lineSubtotal);
+  const shipping = calcShipping(lineSubtotal, getSelectedDeliveryArea());
   checkoutTotal = lineSubtotal + shipping;
+  updateDeliveryAreaFeeLabels(lineSubtotal);
 
   if (itemsEl) {
     itemsEl.innerHTML = items
@@ -589,11 +750,15 @@ function renderCheckoutOrderSummary(items, subtotal) {
 }
 
 async function prepareCheckoutForm() {
+  syncCheckoutStickyOffset();
+  bindCheckoutStickyOffset();
   await loadPaymentMethods();
   selectedPayment = null;
   const paymentDetails = document.getElementById('paymentDetails');
   if (paymentDetails) paymentDetails.style.display = 'none';
+  setManualPaymentFieldsVisible(true);
   renderPaymentOptions();
+  bindDeliveryAreaEvents();
 
   const emailGroup = document.getElementById('checkoutEmailGroup');
   const emailInput = document.getElementById('checkoutEmail');
@@ -621,9 +786,7 @@ async function initCheckoutPage() {
   await prepareCheckoutForm();
   try {
     const { items, count, subtotal } = await api('/cart');
-    const cartCountEl = document.getElementById('cartCount');
-    if (cartCountEl) cartCountEl.textContent = count;
-    updateStoreMobileNavBadges();
+    setCartCount(count);
     renderCheckoutOrderSummary(items, subtotal);
     renderPaymentOptions();
   } catch (e) {
@@ -632,6 +795,21 @@ async function initCheckoutPage() {
 }
 
 window.initCheckoutPage = initCheckoutPage;
+
+function syncCheckoutStickyOffset() {
+  if (!document.getElementById('checkoutPage') && !document.getElementById('cartPage')) return;
+  const shell = document.querySelector('.site-header-sticky');
+  const header = document.querySelector('header');
+  const offset = (shell?.offsetHeight || header?.offsetHeight || 72) + 16;
+  document.documentElement.style.setProperty('--checkout-stick-top', `${offset}px`);
+}
+
+function bindCheckoutStickyOffset() {
+  syncCheckoutStickyOffset();
+  if (window.__checkoutStickyBound) return;
+  window.__checkoutStickyBound = true;
+  window.addEventListener('resize', syncCheckoutStickyOffset, { passive: true });
+}
 
 async function openCheckout() {
   window.location.href = '/checkout';
@@ -644,8 +822,7 @@ async function changeQty(cartItemId, delta) {
       body: JSON.stringify({ delta }),
     });
     renderCartItems(data.items, data.subtotal);
-    document.getElementById('cartCount').textContent = data.count;
-    updateStoreMobileNavBadges();
+    setCartCount(data.count);
   } catch (e) {
     showToast(e.message, 'warning');
   }
@@ -655,17 +832,30 @@ async function removeFromCart(cartItemId) {
   try {
     const data = await api(`/cart/${cartItemId}`, { method: 'DELETE' });
     renderCartItems(data.items, data.subtotal);
-    document.getElementById('cartCount').textContent = data.count;
-    updateStoreMobileNavBadges();
+    setCartCount(data.count);
   } catch (e) {
     showToast(e.message, 'warning');
   }
 }
 
 function toggleCart() {
-  document.getElementById('cartOverlay').classList.toggle('open');
-  if (document.getElementById('cartOverlay').classList.contains('open')) refreshCart();
+  window.location.href = '/cart';
 }
+
+async function initCartPage() {
+  syncCheckoutStickyOffset();
+  bindCheckoutStickyOffset();
+  try {
+    const { items, count, subtotal } = await api('/cart');
+    setCartCount(count);
+    renderCartItems(items, subtotal);
+    updateAddToCartButtonStates(items);
+  } catch (e) {
+    console.error(e);
+  }
+}
+
+window.initCartPage = initCartPage;
 
 function openModal(id) {
   document.getElementById(id).classList.add('open');
@@ -695,6 +885,15 @@ function saveWishlist(list) {
   updateStoreMobileNavBadges();
 }
 
+function setCartCount(count) {
+  const n = String(count);
+  const el = document.getElementById('cartCount');
+  if (el) el.textContent = n;
+  const headerBadge = document.querySelector('[data-cart-count-badge]');
+  if (headerBadge) headerBadge.textContent = n;
+  updateStoreMobileNavBadges();
+}
+
 function updateStoreMobileNavBadges() {
   const cartEl = document.getElementById('storeMnavCartBadge');
   const wishEl = document.getElementById('storeMnavWishBadge');
@@ -719,6 +918,25 @@ function updateStoreMobileNavBadges() {
   }
 }
 
+function syncStoreMobileNavActive() {
+  const nav = document.getElementById('storeMobileNav');
+  if (!nav) return;
+  const path = window.location.pathname;
+  const tab = new URLSearchParams(window.location.search).get('tab');
+  nav.querySelectorAll('.store-mnav-item').forEach((el) => el.classList.remove('is-active'));
+  if (path === '/cart') {
+    document.getElementById('storeMnavCart')?.classList.add('is-active');
+    return;
+  }
+  if (path === '/account' && tab === 'wishlist') {
+    document.getElementById('storeMnavWishlist')?.classList.add('is-active');
+    return;
+  }
+  if (path === '/account') {
+    nav.querySelector('a.store-mnav-item[href="/account"]')?.classList.add('is-active');
+  }
+}
+
 function bindStoreMobileNav() {
   if (window.__wnStoreMobileNavBound) return;
   window.__wnStoreMobileNavBound = true;
@@ -729,10 +947,21 @@ function bindStoreMobileNav() {
       openNavMenu();
       return;
     }
-    if (e.target.closest('#storeMnavCart')) {
-      e.preventDefault();
-      toggleCart();
+    const mnavLink = e.target.closest('#storeMobileNav a.store-mnav-item[href]');
+    if (mnavLink) {
+      closeNavMenu();
     }
+  });
+
+  window.addEventListener('popstate', syncStoreMobileNavActive);
+  document.addEventListener('wn:fast-page', () => {
+    requestAnimationFrame(() => {
+      mountMobileMenu();
+      syncStoreMobileNavActive();
+    });
+  });
+  document.addEventListener('wn:fast-account', () => {
+    requestAnimationFrame(syncStoreMobileNavActive);
   });
 }
 
@@ -778,6 +1007,7 @@ async function placeOrder(e) {
     return;
   }
   try {
+    const isCod = selectedPayment === 'cod';
     const data = await api('/orders', {
       method: 'POST',
       body: JSON.stringify({
@@ -785,11 +1015,10 @@ async function placeOrder(e) {
         shipping_phone: document.getElementById('shipPhone').value,
         customer_email: document.getElementById('checkoutEmail')?.value?.trim() || undefined,
         shipping_address: document.getElementById('shipAddress').value,
-        shipping_city: document.getElementById('shipCity').value,
-        shipping_zip: document.getElementById('shipZip').value,
+        delivery_area: getSelectedDeliveryArea(),
         payment_method: selectedPayment,
-        payment_phone: document.getElementById('paymentPhone').value,
-        transaction_id: document.getElementById('transactionId').value,
+        payment_phone: isCod ? undefined : document.getElementById('paymentPhone').value,
+        transaction_id: isCod ? undefined : document.getElementById('transactionId').value,
         customer_note: document.getElementById('customerNote').value,
       }),
     });
@@ -797,7 +1026,11 @@ async function placeOrder(e) {
       closeModal('checkoutModal');
     }
     await refreshCart();
-    showToast(`🎉 অর্ডার ${data.orderNumber} জমা হয়েছে! পেমেন্ট যাচাই হচ্ছে`);
+    showToast(
+      isCod
+        ? `🎉 অর্ডার ${data.orderNumber} জমা হয়েছে! ডেলিভারিতে পেমেন্ট করুন`
+        : `🎉 অর্ডার ${data.orderNumber} জমা হয়েছে! পেমেন্ট যাচাই হচ্ছে`
+    );
     setTimeout(() => {
       window.location.href = `/track-order?order=${encodeURIComponent(data.orderNumber)}`;
     }, 1200);
@@ -965,7 +1198,7 @@ function patchHeaderAuth(user) {
   if (user?.email) {
     const accountLink = document.createElement('a');
     accountLink.href = '/account';
-    accountLink.className = 'header-btn header-icon-btn';
+    accountLink.className = 'header-btn header-icon-btn only-desktop';
     accountLink.setAttribute('aria-label', 'আমার অ্যাকাউন্ট');
     accountLink.innerHTML = `${USER_ICON_SVG}<span class="only-desktop">আমার অ্যাকাউন্ট</span>`;
 
@@ -1002,10 +1235,8 @@ async function refreshNavContext() {
     const res = await fetch('/api/nav-context', { credentials: 'same-origin' });
     if (!res.ok) return;
     const data = await res.json();
-    const el = document.getElementById('cartCount');
-    if (el && typeof data.cartCount === 'number') {
-      el.textContent = String(data.cartCount);
-      updateStoreMobileNavBadges();
+    if (typeof data.cartCount === 'number') {
+      setCartCount(data.cartCount);
     }
     patchHeaderAuth(data.user);
   } catch {
@@ -1021,9 +1252,9 @@ async function logout() {
 
 function showToast(msg, type = 'success') {
   const container = document.getElementById('toastContainer');
+  if (!container) return;
   const toast = document.createElement('div');
-  toast.className = 'toast';
-  toast.style.borderLeftColor = type === 'warning' ? '#F59E0B' : 'var(--success)';
+  toast.className = type === 'warning' ? 'toast toast-warning' : 'toast';
   toast.textContent = msg;
   container.appendChild(toast);
   setTimeout(() => {
@@ -1171,8 +1402,11 @@ function bootStoreCarousels() {
   }
   document.addEventListener('wn:fast-page', () => {
     requestAnimationFrame(() => {
+      mountMobileMenu();
       bootHomePage();
+      refreshCart();
       updateStoreMobileNavBadges();
+      syncStoreMobileNavActive();
     });
   });
 }
@@ -1184,6 +1418,7 @@ loadPaymentMethods();
 refreshNavContext();
 bindStoreMobileNav();
 updateStoreMobileNavBadges();
+syncStoreMobileNavActive();
 
 if (new URLSearchParams(location.search).get('login') === '1') {
   openModal('loginModal');
@@ -1196,9 +1431,14 @@ window.login = login;
 window.register = register;
 window.logout = logout;
 window.toggleCart = toggleCart;
+window.setCartCount = setCartCount;
+window.syncStoreMobileNavActive = syncStoreMobileNavActive;
 window.openNavMenu = openNavMenu;
 window.updateStoreMobileNavBadges = updateStoreMobileNavBadges;
 window.patchHeaderAuth = patchHeaderAuth;
 window.refreshNavContext = refreshNavContext;
-window.clearPageCaches = clearPageCaches;
+window.updateAddToCartButtonStates = updateAddToCartButtonStates;
+window.refreshCart = refreshCart;
+
+})();
 

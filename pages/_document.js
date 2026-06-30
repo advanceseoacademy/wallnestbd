@@ -26,7 +26,7 @@ class MyDocument extends Document {
           <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="anonymous" />
           {!skipStoreCss ? (
             <>
-              <link rel="stylesheet" href="/css/style.css?v=57" />
+              <link rel="stylesheet" href="/css/style.css?v=77" />
               <link
                 href="https://fonts.googleapis.com/css2?family=Hind+Siliguri:wght@300;400;500;600;700&family=DM+Sans:wght@300;400;500;600;700&display=swap"
                 rel="stylesheet"
@@ -34,7 +34,7 @@ class MyDocument extends Document {
             </>
           ) : null}
           {isAccount ? (
-            <link rel="stylesheet" href="/css/user-dashboard.css?v=23" />
+            <link rel="stylesheet" href="/css/user-dashboard.css?v=26" />
           ) : null}
         </Head>
         <body>

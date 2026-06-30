@@ -1,24 +1,3 @@
-<div class="cart-overlay" id="cartOverlay">
-  <div class="cart-backdrop" onclick="toggleCart()"></div>
-  <div class="cart-panel">
-    <div class="cart-sheet-handle" aria-hidden="true"></div>
-    <div class="cart-header">
-      <div class="cart-header-title">
-        <h3>🛒 আপনার কার্ট</h3>
-        <span class="cart-header-count" id="cartHeaderCount"></span>
-      </div>
-      <button class="modal-close cart-close-btn" type="button" aria-label="বন্ধ করুন" onclick="toggleCart()">✕</button>
-    </div>
-    <div class="cart-items" id="cartItems"></div>
-    <div class="cart-footer" id="cartFooter" style="display:none;">
-      <div class="cart-total-row"><span>সাবটোটাল</span><span id="cartSubtotal">৳0</span></div>
-      <div class="cart-total-row"><span>শিপিং</span><span id="cartShipping" class="cart-shipping-val">ফ্রি</span></div>
-      <div class="cart-total-row grand"><span>মোট</span><span id="cartTotal">৳0</span></div>
-      <a href="/checkout" class="btn-block cart-checkout-btn">চেকআউট করুন →</a>
-    </div>
-  </div>
-</div>
-
 <div class="modal-overlay" id="loginModal">
   <div class="modal">
     <div class="modal-header"><h3>👤 লগইন</h3><button class="modal-close" type="button" onclick="closeModal('loginModal')">✕</button></div>

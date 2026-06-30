@@ -79,12 +79,54 @@ function renderHeroSlots(categories) {
 
 async function init() {
   if (!document.getElementById('heroSlots')) return;
-  const { categories } = await adminApi('/categories');
-  renderHeroSlots(categories || []);
+  const [catRes, shipRes] = await Promise.all([
+    adminApi('/categories'),
+    adminApi('/settings/shipping'),
+  ]);
+  renderHeroSlots(catRes.categories || []);
+  bindShippingSettingsForm(shipRes.shipping || {});
+}
+
+function bindShippingSettingsForm(shipping) {
+  const form = document.getElementById('shippingSettingsForm');
+  if (!form || form.dataset.bound === '1') return;
+  form.dataset.bound = '1';
+  document.getElementById('freeShippingMin').value = shipping.free_shipping_min ?? 1500;
+  document.getElementById('insideDhakaFee').value = shipping.inside_dhaka_fee ?? 60;
+  document.getElementById('outsideDhakaFee').value = shipping.outside_dhaka_fee ?? 120;
+  form.addEventListener('submit', async (e) => {
+    e.preventDefault();
+    const status = document.getElementById('shippingSaveStatus');
+    const btn = document.getElementById('btnSaveShipping');
+    try {
+      if (btn) btn.disabled = true;
+      if (status) status.textContent = 'সেভ হচ্ছে...';
+      await adminApi('/settings/shipping', {
+        method: 'PUT',
+        body: JSON.stringify({
+          shipping: {
+            free_shipping_min: Number(document.getElementById('freeShippingMin').value),
+            inside_dhaka_fee: Number(document.getElementById('insideDhakaFee').value),
+            outside_dhaka_fee: Number(document.getElementById('outsideDhakaFee').value),
+          },
+        }),
+      });
+      if (status) status.textContent = '✓ ডেলিভারি চার্জ সেভ হয়েছে';
+    } catch (err) {
+      alert(err.message);
+      if (status) status.textContent = '';
+    } finally {
+      if (btn) btn.disabled = false;
+    }
+  });
+}
+
+async function initSettingsPage() {
+  await init();
 }
 
 bootAdminPage('settings', () =>
-  init().catch((err) => {
+  initSettingsPage().catch((err) => {
     console.error(err);
     alert(err.message || 'সেটিংস লোড হয়নি');
   })

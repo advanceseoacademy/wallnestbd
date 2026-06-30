@@ -10,7 +10,7 @@
 <meta name="description" content="<%= product.name %> — <%= product.desc ? product.desc.slice(0, 120) : 'WallNest BD' %>">
 <% } %>
 <link href="https://fonts.googleapis.com/css2?family=Hind+Siliguri:wght@300;400;500;600;700&family=DM+Sans:wght@300;400;500;600;700&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="/css/style.css?v=57">
+<link rel="stylesheet" href="/css/style.css?v=59">
 </head>
 <body>
 
@@ -116,7 +116,7 @@
         </div>
 
         <div class="product-actions">
-          <button type="button" class="btn-add-cart btn-lg" onclick="addToCartWithQty(<%= JSON.stringify(product.id) %>)" <%= product.stock <= 0 ? 'disabled' : '' %>>🛒 কার্টে যোগ করুন</button>
+          <button type="button" class="btn-add-cart btn-lg" data-product-id="<%= product.id %>" onclick="addToCartWithQty(<%= JSON.stringify(product.id) %>)" <%= product.stock <= 0 ? 'disabled' : '' %>>🛒 কার্টে যোগ করুন</button>
           <button type="button" class="btn-buy-now btn-lg" onclick="buyNowWithQty(<%= JSON.stringify(product.id) %>)" <%= product.stock <= 0 ? 'disabled' : '' %>>⚡ এখনই কিনুন</button>
         </div>
 
@@ -257,6 +257,6 @@
   }).replace(/</g, '\\u003c') %>;
   if (window.initProductPage) window.initProductPage();
 </script>
-<script src="/js/product-page.js?v=5"></script>
+<script src="/js/product-page.js?v=6"></script>
 </body>
 </html>

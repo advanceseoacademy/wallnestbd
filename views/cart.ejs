@@ -1,0 +1,59 @@
+<!DOCTYPE html>
+<html lang="bn">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<%- include('partials/favicon') %>
+<%- include('partials/seo-meta', { seo: typeof seo !== 'undefined' ? seo : null, siteUrl: typeof siteUrl !== 'undefined' ? siteUrl : '' }) %>
+<% if (typeof seo === 'undefined' || !seo) { %><title>কার্ট — WallNest BD</title><% } %>
+<link href="https://fonts.googleapis.com/css2?family=Hind+Siliguri:wght@300;400;500;600;700&family=DM+Sans:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="/css/style.css?v=76">
+</head>
+<body>
+
+<%- include('partials/site-header', { categories, cartCount, user, activeNav: '', storeSettings }) %>
+
+<div class="site-wrap site-main cart-page" id="cartPage">
+  <nav class="breadcrumb">
+    <a href="/">হোম</a> / <span>কার্ট</span>
+  </nav>
+
+  <div class="section-header">
+    <h1 class="section-title">🛒 আপনার কার্ট <span class="cart-page-count" id="cartPageHeaderCount"></span></h1>
+    <a href="/" class="see-all cart-back-link">← কেনাকাটা চালিয়ে যান</a>
+  </div>
+
+  <div id="cartEmpty" class="cart-page-empty" hidden>
+    <div class="cart-page-empty-icon">🛒</div>
+    <h2>কার্ট খালি আছে</h2>
+    <p>পছন্দের পণ্য কার্টে যোগ করে এখানে দেখুন।</p>
+    <a href="/" class="btn-primary">পণ্য দেখুন</a>
+  </div>
+
+  <div id="cartLayout" class="cart-layout" hidden>
+    <div class="cart-page-items-card">
+      <h2 class="cart-card-title">কার্টের পণ্য</h2>
+      <div class="cart-page-items" id="cartItems"></div>
+    </div>
+
+    <aside class="cart-summary-card">
+      <h2 class="cart-card-title">অর্ডার সারাংশ</h2>
+      <div class="cart-page-summary" id="cartFooter">
+        <div class="cart-totals">
+          <div class="cart-total-row"><span>সাবটোটাল</span><span id="cartSubtotal">৳0</span></div>
+          <div class="cart-total-row"><span>শিপিং (আনুমানিক)</span><span id="cartShipping" class="cart-shipping-val">ফ্রি</span></div>
+          <div class="cart-total-row grand"><span>মোট</span><span id="cartTotal">৳0</span></div>
+        </div>
+        <a href="/checkout" class="btn-block cart-checkout-btn">চেকআউট করুন →</a>
+        <p class="cart-page-note">চেকআউটে ডেলিভারি এলাকা বেছে নিলে সঠিক শিপিং চার্জ দেখাবে।</p>
+      </div>
+    </aside>
+  </div>
+</div>
+
+<%- include('partials/site-footer', { storeSettings }) %>
+<%- include('partials/cart-modals', { storeSettings }) %>
+<script>window.__WN_STORE__ = <%- JSON.stringify(storeSettings || {}) %>;</script>
+<script src="/js/cart-page.js?v=1"></script>
+</body>
+</html>

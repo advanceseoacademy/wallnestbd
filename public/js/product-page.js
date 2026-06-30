@@ -289,6 +289,9 @@
       window.__PRODUCT_PAGE__.sizeStock = stock;
     }
     refreshProductPriceDisplay();
+    if (typeof window.updateAddToCartButtonStates === 'function' && window.__cartItems) {
+      window.updateAddToCartButtonStates(window.__cartItems);
+    }
   }
 
   function bindSizeEvents() {
@@ -350,6 +353,7 @@
     };
 
     window.getProductQty = getProductQty;
+    window.getSelectedSizeLabel = getSelectedSizeLabel;
 
     window.addToCartWithQty = async function (id) {
       const qty = getProductQty();
@@ -362,9 +366,17 @@
             sizeLabel: getSelectedSizeLabel(),
           }),
         });
-        document.getElementById('cartCount').textContent = data.count;
+        if (typeof window.setCartCount === 'function') {
+          window.setCartCount(data.count);
+        } else {
+          const el = document.getElementById('cartCount');
+          if (el) el.textContent = data.count;
+        }
         showToast(`✅ ${qty} পিস কার্টে যোগ হয়েছে!`);
         await refreshCart();
+        if (typeof window.updateAddToCartButtonStates === 'function' && window.__cartItems) {
+          window.updateAddToCartButtonStates(window.__cartItems);
+        }
       } catch (e) {
         showToast(e.message, 'warning');
       }
@@ -432,6 +444,10 @@
     };
 
     saveRecent(p);
+
+    if (typeof refreshCart === 'function') {
+      refreshCart();
+    }
   }
 
   window.initProductPage = initProductPage;

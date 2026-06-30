@@ -555,6 +555,24 @@ api.put('/settings/payments', async (req, res) => {
   }
 });
 
+api.get('/settings/shipping', async (_req, res) => {
+  try {
+    const bridge = require('../lib/adminApiBridge');
+    res.json(await bridge.getShippingSettings());
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+api.put('/settings/shipping', async (req, res) => {
+  try {
+    const bridge = require('../lib/adminApiBridge');
+    res.json(await bridge.updateShippingSettings(req.body.shipping || {}));
+  } catch (err) {
+    res.status(400).json({ error: err.message });
+  }
+});
+
 router.use('/api', api);
 
 module.exports = router;

@@ -23,6 +23,7 @@ function isStoreRoute(pathname) {
     pathname === '/new-arrivals' ||
     pathname === '/track-order' ||
     pathname === '/checkout' ||
+    pathname === '/cart' ||
     pathname === '/reviews' ||
     pathname.startsWith('/product/') ||
     pathname.startsWith('/category/')
@@ -72,6 +73,9 @@ export default function App({ Component, pageProps }) {
         />
       ) : null}
       {showFastNav ? <FastNav /> : null}
+      {!isAdmin ? (
+        <Script src="/js/app.js?v=33" strategy="beforeInteractive" id="wn-store-app" />
+      ) : null}
       {isAdmin ? (
         <Script src="/js/admin-common.js?v=10" strategy="beforeInteractive" />
       ) : null}
@@ -101,10 +105,7 @@ export default function App({ Component, pageProps }) {
         </>
       ) : null}
       {useStoreShell ? (
-        <>
-          <Script src="/js/app.js?v=20" strategy="beforeInteractive" id="wn-store-app" />
-          <StorePage pageProps={pageProps} />
-        </>
+        <StorePage pageProps={pageProps} />
       ) : useAccountShell ? (
         <AccountPage pageProps={pageProps} />
       ) : (
@@ -119,7 +120,9 @@ export default function App({ Component, pageProps }) {
                   dangerouslySetInnerHTML={{ __html: pageProps.inlineScripts }}
                 />
               ) : null}
-              {pageProps.scriptSrcs?.map((src) => (
+              {pageProps.scriptSrcs
+                ?.filter((src) => !/^\/js\/app\.js(\?|$)/.test(src || ''))
+                .map((src) => (
                 <Script key={src} src={src} strategy="afterInteractive" />
               ))}
             </>

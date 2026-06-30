@@ -196,4 +196,18 @@ export class AdminController {
       throw new BadRequestException(e.message);
     }
   }
+
+  @Get('settings/shipping')
+  async shippingSettings() {
+    return bridge.getShippingSettings();
+  }
+
+  @Put('settings/shipping')
+  async updateShippingSettings(@Body() body: { shipping: Record<string, unknown> }) {
+    try {
+      return await bridge.updateShippingSettings(body.shipping || {});
+    } catch (e) {
+      throw new BadRequestException(e.message);
+    }
+  }
 }

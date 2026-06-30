@@ -9,7 +9,7 @@ import {
 } from './AccountPage';
 import { ensureAccountStylesheet } from '../lib/client/ensureAccountStylesheet';
 
-const STORE_PATHS = /^\/$|^\/new-arrivals$|^\/track-order$|^\/checkout$|^\/reviews$|^\/product\/[^/]+$|^\/category\/[^/]+$/;
+const STORE_PATHS = /^\/$|^\/new-arrivals$|^\/track-order$|^\/checkout$|^\/cart$|^\/reviews$|^\/product\/[^/]+$|^\/category\/[^/]+$/;
 const ACCOUNT_PATH = '/account';
 
 const prefetchInflight = new Set();
@@ -147,6 +147,9 @@ export default function FastNav() {
             window.dispatchEvent(new CustomEvent('wn:fast-page', { detail: page }));
           }
           await router.push(path);
+          if (typeof window.syncStoreMobileNavActive === 'function') {
+            window.syncStoreMobileNavActive();
+          }
         } finally {
           document.body.classList.remove('route-loading');
           refreshNavContext();
@@ -158,12 +161,16 @@ export default function FastNav() {
         e.preventDefault();
         ensureAccountStylesheet();
         document.body.classList.add('route-loading');
+        const dest = url.pathname + url.search + url.hash;
         try {
           const page = await loadAccountPage();
           if (page?.bodyHtml) {
             window.dispatchEvent(new CustomEvent('wn:fast-account', { detail: page }));
           }
-          await router.push(ACCOUNT_PATH);
+          await router.push(dest);
+          if (typeof window.syncStoreMobileNavActive === 'function') {
+            window.syncStoreMobileNavActive();
+          }
         } finally {
           document.body.classList.remove('route-loading');
         }
@@ -235,13 +242,13 @@ export default function FastNav() {
     if (!router.isReady) return;
     const path = router.pathname || router.asPath.split('?')[0];
 
-    ['/', '/new-arrivals', '/reviews'].forEach((p) => {
+    ['/', '/new-arrivals', '/reviews', '/cart'].forEach((p) => {
       router.prefetch(p);
       prefetchStorePage(p);
     });
 
     if (path.startsWith('/account')) {
-      ['/', '/new-arrivals', '/reviews'].forEach((p) => prefetchStorePage(p));
+      ['/', '/new-arrivals', '/reviews', '/cart'].forEach((p) => prefetchStorePage(p));
     } else {
       router.prefetch(ACCOUNT_PATH);
       fetch('/api/nav-context', { credentials: 'same-origin' })

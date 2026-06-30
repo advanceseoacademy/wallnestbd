@@ -10,7 +10,7 @@ const {
 } = require('../lib/cart');
 const { filterByProductParam } = require('../lib/productQuery');
 const { mergePaymentSettings } = require('../lib/paymentDefaults');
-const { getStoreSettings, computeShipping } = require('../lib/storeSettings');
+const { getStoreSettings, computeShipping, normalizeDeliveryArea } = require('../lib/storeSettings');
 const { trackOrderByNumber } = require('../lib/orderTracking');
 const { filterStoreCategories } = require('../lib/catalogCategories');
 const { requireUser } = require('../middleware/requireUser');
@@ -205,21 +205,25 @@ router.post('/orders', async (req, res) => {
       transaction_id,
       payment_phone,
       customer_note,
+      delivery_area,
     } = req.body;
 
     if (!shipping_name || !shipping_address) {
       return res.status(400).json({ error: 'Shipping name and address required' });
     }
-    if (!payment_method || !['bkash', 'rocket', 'nagad'].includes(payment_method)) {
-      return res.status(400).json({ error: 'bKash, Rocket, or Nagad payment required' });
+    if (!delivery_area || !['inside_dhaka', 'outside_dhaka'].includes(delivery_area)) {
+      return res.status(400).json({ error: 'Delivery area is required' });
     }
-    if (!transaction_id || !payment_phone) {
+    if (!payment_method || !['bkash', 'rocket', 'nagad', 'cod'].includes(payment_method)) {
+      return res.status(400).json({ error: 'Valid payment method required' });
+    }
+    if (payment_method !== 'cod' && (!transaction_id || !payment_phone)) {
       return res.status(400).json({ error: 'Transaction ID and payment phone required' });
     }
 
     const subtotal = items.reduce((s, i) => s + i.price * i.qty, 0);
     const storeSettings = await getStoreSettings();
-    const shipping = computeShipping(subtotal, storeSettings);
+    const shipping = computeShipping(subtotal, storeSettings, normalizeDeliveryArea(delivery_area));
     const total = subtotal + shipping;
     const orderNumber = `WN-${Date.now().toString(36).toUpperCase()}`;
 
@@ -234,9 +238,9 @@ router.post('/orders', async (req, res) => {
         order_number: orderNumber,
         status: 'pending',
         payment_method,
-        payment_status: 'submitted',
-        transaction_id,
-        payment_phone,
+        payment_status: payment_method === 'cod' ? 'pending' : 'submitted',
+        transaction_id: payment_method === 'cod' ? null : transaction_id,
+        payment_phone: payment_method === 'cod' ? (shipping_phone || null) : payment_phone,
         customer_note: customer_note || null,
         currency: 'BDT',
         subtotal,
@@ -247,6 +251,7 @@ router.post('/orders', async (req, res) => {
         shipping_address,
         shipping_city: shipping_city || null,
         shipping_zip: shipping_zip || null,
+        delivery_area: normalizeDeliveryArea(delivery_area),
         customer_email: req.session?.user?.email
           ? String(req.session.user.email).trim().toLowerCase()
           : req.body.customer_email
