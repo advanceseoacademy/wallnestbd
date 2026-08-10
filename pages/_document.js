@@ -1,4 +1,9 @@
 import Document, { Html, Head, Main, NextScript } from 'next/document';
+import {
+  META_PIXEL_ID,
+  metaPixelBaseScript,
+  metaPixelNoscriptHtml,
+} from '../lib/metaPixel';
 
 class MyDocument extends Document {
   static async getInitialProps(ctx) {
@@ -14,11 +19,14 @@ class MyDocument extends Document {
       skipStoreCss: isAdmin,
       isAccount,
       isOfferMotion,
+      isAdmin,
     };
   }
 
   render() {
-    const { skipStoreCss, isAccount, isOfferMotion } = this.props;
+    const { skipStoreCss, isAccount, isOfferMotion, isAdmin } = this.props;
+    const pixelScript = !isAdmin ? metaPixelBaseScript() : '';
+    const pixelNoscriptSrc = !isAdmin ? metaPixelNoscriptHtml() : null;
     return (
       <Html lang="bn">
         <Head>
@@ -43,8 +51,25 @@ class MyDocument extends Document {
           {isOfferMotion ? (
             <link rel="stylesheet" href="/css/offer-motion-sensor.css?v=5" />
           ) : null}
+          {pixelScript ? (
+            <script
+              dangerouslySetInnerHTML={{ __html: pixelScript }}
+              data-meta-pixel={META_PIXEL_ID}
+            />
+          ) : null}
         </Head>
         <body className={isOfferMotion ? 'offer-ms-page' : undefined}>
+          {pixelNoscriptSrc ? (
+            <noscript>
+              <img
+                height="1"
+                width="1"
+                style={{ display: 'none' }}
+                src={pixelNoscriptSrc}
+                alt=""
+              />
+            </noscript>
+          ) : null}
           <Main />
           <NextScript />
         </body>

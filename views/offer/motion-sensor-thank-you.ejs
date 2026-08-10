@@ -60,5 +60,37 @@
     © <%= new Date().getFullYear() %> WallNest BD · ক্যাশ অন ডেলিভারি
   </footer>
 </main>
+<script src="/js/meta-pixel.js?v=1"></script>
+<script>
+(function () {
+  var params = new URLSearchParams(window.location.search);
+  var orderNumber = params.get('order') || document.getElementById('thankOrderNumber')?.textContent?.trim() || '';
+  var value = Number(params.get('value') || 0);
+  var qty = Number(params.get('qty') || 1) || 1;
+  if (!orderNumber) return;
+  var key = 'wn_pixel_purchase_' + orderNumber;
+  try {
+    if (sessionStorage.getItem(key)) return;
+    sessionStorage.setItem(key, '1');
+  } catch (e) {}
+  function fire() {
+    if (!window.wnMetaPixel || typeof window.wnMetaPixel.purchase !== 'function') return false;
+    window.wnMetaPixel.purchase({
+      value: value,
+      currency: 'BDT',
+      orderNumber: orderNumber,
+      numItems: qty
+    });
+    return true;
+  }
+  if (!fire()) {
+    var tries = 0;
+    var t = setInterval(function () {
+      tries += 1;
+      if (fire() || tries > 40) clearInterval(t);
+    }, 50);
+  }
+})();
+</script>
 </body>
 </html>

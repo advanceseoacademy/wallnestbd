@@ -137,7 +137,30 @@
       if (typeof window.showToast === 'function') {
         window.showToast(`🎉 অর্ডার ${data.orderNumber} জমা হয়েছে!`);
       }
-      window.location.href = `/offer/motion-sensor-light/thank-you?order=${encodeURIComponent(data.orderNumber)}`;
+
+      const orderTotal = Number(data.total) || 0;
+      if (typeof window.wnMetaPixel?.lead === 'function') {
+        window.wnMetaPixel.lead({
+          content_name: 'Motion Sensor Offer COD',
+          value: orderTotal,
+          currency: 'BDT',
+        });
+      }
+      if (typeof window.wnMetaPixel?.purchase === 'function') {
+        window.wnMetaPixel.purchase({
+          value: orderTotal,
+          currency: 'BDT',
+          orderNumber: data.orderNumber,
+          numItems: qty,
+        });
+      }
+
+      const thankYouQs = new URLSearchParams({
+        order: data.orderNumber,
+      });
+      if (orderTotal > 0) thankYouQs.set('value', String(orderTotal));
+      thankYouQs.set('qty', String(qty));
+      window.location.href = `/offer/motion-sensor-light/thank-you?${thankYouQs.toString()}`;
     } catch (err) {
       showError(err.message || 'অর্ডার ব্যর্থ হয়েছে');
       if (submitBtn) {

@@ -73,8 +73,24 @@ export default function App({ Component, pageProps }) {
     document.body.classList.remove('offer-ms-page');
   }, [isOfferMotion]);
 
+  useEffect(() => {
+    if (isAdmin) return undefined;
+    const onRoute = () => {
+      if (typeof window.fbq === 'function') {
+        window.fbq('track', 'PageView');
+      } else if (typeof window.wnMetaPixel?.pageView === 'function') {
+        window.wnMetaPixel.pageView();
+      }
+    };
+    router.events.on('routeChangeComplete', onRoute);
+    return () => router.events.off('routeChangeComplete', onRoute);
+  }, [isAdmin, router.events]);
+
   return (
     <>
+      {!isAdmin ? (
+        <Script src="/js/meta-pixel.js?v=1" strategy="afterInteractive" id="wn-meta-pixel-helpers" />
+      ) : null}
       {!isAdmin ? (
         <Script
           src="/js/supabase.min.js?v=1"
