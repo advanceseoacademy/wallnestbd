@@ -7,6 +7,7 @@ const {
   getNewArrivalsPageData,
   getTrackOrderPageData,
   getCheckoutPageData,
+  getMotionSensorOfferPageData,
 } = require('../lib/storeData');
 const {
   getSiteUrl,
@@ -16,6 +17,7 @@ const {
   seoForReviews,
   seoForNewArrivals,
   seoForTrackOrder,
+  seoForMotionSensorOffer,
   seoNoIndex,
 } = require('../lib/seo');
 const { isCatalogCategory } = require('../lib/catalogCategories');
@@ -105,6 +107,35 @@ router.get('/new-arrivals', async (req, res) => {
     const siteUrl = getSiteUrl(req);
     const seo = seoForNewArrivals(siteUrl);
     res.render('new-arrivals', { ...data, seo, siteUrl });
+  } catch (err) {
+    console.error(err);
+    res.status(500).render('error', { message: err.message });
+  }
+});
+
+router.get('/offer/motion-sensor-light', async (req, res) => {
+  try {
+    const data = await getMotionSensorOfferPageData(req);
+    const siteUrl = getSiteUrl(req);
+    const seo = seoForMotionSensorOffer(siteUrl, data.product);
+    res.render('offer/motion-sensor-light', { ...data, seo, siteUrl });
+  } catch (err) {
+    console.error(err);
+    res.status(500).render('error', { message: err.message });
+  }
+});
+
+router.get('/offer/motion-sensor-light/thank-you', async (req, res) => {
+  try {
+    const siteUrl = getSiteUrl(req);
+    const seo = seoNoIndex('অর্ডার ধন্যবাদ — WallNest BD');
+    const prefillOrder =
+      typeof req.query.order === 'string' ? req.query.order.trim() : '';
+    res.render('offer/motion-sensor-thank-you', {
+      prefillOrder,
+      seo,
+      siteUrl,
+    });
   } catch (err) {
     console.error(err);
     res.status(500).render('error', { message: err.message });

@@ -124,6 +124,15 @@ router.post('/cart/add', async (req, res) => {
   }
 });
 
+router.post('/cart/clear', async (req, res) => {
+  try {
+    await clearCart(req);
+    res.json({ ok: true, items: [], count: 0, subtotal: 0 });
+  } catch (err) {
+    res.status(400).json({ error: err.message });
+  }
+});
+
 router.patch('/cart/:cartItemId', async (req, res) => {
   try {
     const delta = Number(req.body.delta || 0);

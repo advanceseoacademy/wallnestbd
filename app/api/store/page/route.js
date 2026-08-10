@@ -8,7 +8,7 @@ import {
 } from '../../../../lib/storePageRender.js';
 
 const STORE_PATH =
-  /^\/$|^\/new-arrivals$|^\/track-order$|^\/checkout$|^\/reviews$|^\/product\/[^/]+$|^\/category\/[^/]+$/;
+  /^\/$|^\/new-arrivals$|^\/track-order$|^\/checkout$|^\/cart$|^\/reviews$|^\/offer\/motion-sensor-light(?:\/thank-you)?$|^\/product\/[^/]+$|^\/category\/[^/]+$/;
 
 async function getReqLike(request) {
   const response = new NextResponse();
@@ -33,7 +33,10 @@ export async function GET(request) {
   try {
     const { reqLike, response } = await getReqLike(request);
     const page = searchParams.get('page');
-    const query = page ? { page } : {};
+    const order = searchParams.get('order');
+    const query = {};
+    if (page) query.page = page;
+    if (order) query.order = order;
     const rendered = await renderStorePageByPath(reqLike, path, query);
     if (!rendered?.bodyHtml) {
       return NextResponse.json({ error: 'Page not found' }, { status: 404 });

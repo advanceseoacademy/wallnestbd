@@ -9,7 +9,7 @@ import {
 } from './AccountPage';
 import { ensureAccountStylesheet } from '../lib/client/ensureAccountStylesheet';
 
-const STORE_PATHS = /^\/$|^\/new-arrivals$|^\/track-order$|^\/checkout$|^\/cart$|^\/reviews$|^\/product\/[^/]+$|^\/category\/[^/]+$/;
+const STORE_PATHS = /^\/$|^\/new-arrivals$|^\/track-order$|^\/checkout$|^\/cart$|^\/reviews$|^\/offer\/motion-sensor-light(?:\/thank-you)?$|^\/product\/[^/]+$|^\/category\/[^/]+$/;
 const ACCOUNT_PATH = '/account';
 
 const prefetchInflight = new Set();
@@ -37,9 +37,12 @@ function accountPath(pathname) {
 async function fetchStorePage(pathWithQuery) {
   const pathname = pathWithQuery.split('?')[0].split('#')[0];
   const qs = pathWithQuery.includes('?') ? pathWithQuery.split('?')[1].split('#')[0] : '';
-  const pageParam = qs ? new URLSearchParams(qs).get('page') : null;
+  const params = qs ? new URLSearchParams(qs) : null;
+  const pageParam = params?.get('page');
+  const orderParam = params?.get('order');
   let url = `/api/store/page?path=${encodeURIComponent(pathname)}`;
   if (pageParam) url += `&page=${encodeURIComponent(pageParam)}`;
+  if (orderParam) url += `&order=${encodeURIComponent(orderParam)}`;
   const res = await fetch(url, { credentials: 'same-origin' });
   if (!res.ok) return null;
   return res.json();

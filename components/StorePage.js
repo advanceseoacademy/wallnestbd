@@ -10,6 +10,7 @@ const STORE_APP_SCRIPT = /^\/js\/app\.js(\?|$)/;
 function isStoreAppScript(src) {
   return STORE_APP_SCRIPT.test(src || '');
 }
+const CACHE_PREFIX = 'wn_page_v5:';
 const CACHE_TTL_MS = 3 * 60 * 1000;
 
 export function readPageCache(path) {

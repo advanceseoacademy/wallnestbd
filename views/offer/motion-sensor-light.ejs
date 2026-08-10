@@ -1,0 +1,285 @@
+<!DOCTYPE html>
+<html lang="bn">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<%- include('../partials/favicon') %>
+<%- include('../partials/seo-meta', { seo: typeof seo !== 'undefined' ? seo : null, siteUrl: typeof siteUrl !== 'undefined' ? siteUrl : '' }) %>
+<% if (typeof seo === 'undefined' || !seo) { %><title>স্মার্ট মোশন সেন্সর LED বাল্ব — WallNest BD</title><% } %>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Baloo+Da+2:wght@500;600;700;800&family=Hind+Siliguri:wght@400;500;600;700&family=JetBrains+Mono:wght@500;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="/css/offer-motion-sensor.css?v=5">
+</head>
+<body class="offer-ms-page">
+<%
+  const p = typeof product !== 'undefined' && product ? product : null;
+  const price = p ? Number(p.price) : 450;
+  const original = p ? Number(p.original || p.price) : 550;
+  const heroImg = (p && p.imageUrl) || '/images/motion-sensor-offer-1.jpg';
+  const productId = p ? (p.slug || p.uuid || p.id) : 'e27-pir-motion-sensor-light';
+  const sizeLabel = (p && p.sizes && p.sizes[0] && p.sizes[0].label) || '15W';
+  const insideFee = (storeSettings && storeSettings.insideDhakaFee) || 80;
+  const outsideFee = (storeSettings && storeSettings.outsideDhakaFee) || 120;
+  const freeMin = (storeSettings && storeSettings.freeShippingMin) || 1500;
+  const saveAmt = original > price ? original - price : 0;
+  const productTitle = (p && (p.nameBn || p.name)) || 'স্মার্ট মোশন সেন্সর LED বাল্ব ১৫W';
+%>
+
+<main class="offer-ms">
+  <div class="topbar offer-ms-topbar">
+    <div class="topbar-inner">
+      <div class="brand"><span class="brand-dot"></span> WallNest <span class="brand-sub">স্মার্ট সেন্সর বাল্ব</span></div>
+      <div class="price-pill">৳<%= price.toLocaleString('en-US') %> মাত্র</div>
+    </div>
+  </div>
+
+  <section class="hero">
+    <div class="glow-dot"></div>
+    <div class="wrap hero-grid">
+      <div>
+        <div class="eyebrow">🔴 PIR + Light Sensor প্রযুক্তি · 15W</div>
+        <h1>সুইচ খোঁজার দিন শেষ —<br>এই বাল্ব <span class="accent">নিজে জ্বলে, নিজে নেভে</span></h1>
+        <p class="lead">আপনি ঘরে ঢুকলেই অন্ধকারে অটোমেটিক জ্বলে ওঠে, আর কেউ না থাকলে নিজে থেকেই নিভে যায়। সিঁড়ি, বারান্দা, বাথরুম বা গ্যারেজ — যেখানেই লাগান, বিদ্যুৎ বাঁচবে আর রাতে হাতড়াতে হবে না।</p>
+        <div class="hero-cta">
+          <a href="#order" class="btn-primary">এখনই অর্ডার করুন</a>
+          <div class="price-tag">
+            <% if (original > price) { %><span class="old">৳<%= original.toLocaleString('en-US') %></span><% } %>
+            <span class="new">৳<%= price.toLocaleString('en-US') %> টাকা</span>
+          </div>
+        </div>
+        <div class="trust-row">
+          <span>✅ <b>CE, RoHS</b> সার্টিফাইড</span>
+          <span>⏱ আয়ুষ্কাল <b>৬০,০০০+ ঘণ্টা</b></span>
+          <span>🚚 <b>Cash on Delivery</b></span>
+        </div>
+      </div>
+      <div class="hero-img-frame">
+        <img src="<%= heroImg %>" alt="<%= productTitle %>" width="420" height="420" fetchpriority="high" decoding="async">
+      </div>
+    </div>
+  </section>
+
+  <div class="cycle">
+    <div class="cycle-inner">
+      <div class="cycle-step">
+        <div class="icon">☀️</div>
+        <div class="tag">দিনে</div>
+        <p>আলো থাকলে বাল্ব বন্ধ থাকে — অযথা বিদ্যুৎ খরচ হয় না।</p>
+      </div>
+      <div class="cycle-step">
+        <div class="icon">🌙</div>
+        <div class="tag">রাতে, কাছে গেলে</div>
+        <p>অন্ধকারে কেউ ৩-৬ মিটারের মধ্যে এলে বাল্ব নিজে থেকে জ্বলে ওঠে।</p>
+      </div>
+      <div class="cycle-step">
+        <div class="icon">🚶</div>
+        <div class="tag">নড়াচড়া থাকা অবস্থায়</div>
+        <p>যতক্ষণ এলাকায় মানুষ থাকে, ততক্ষণ আলো জ্বলে থাকে।</p>
+      </div>
+      <div class="cycle-step">
+        <div class="icon">⏱</div>
+        <div class="tag">চলে গেলে</div>
+        <p>৩০-৪৫ সেকেন্ড পর কাউকে না পেলে বাল্ব নিজে থেকেই নিভে যায়।</p>
+      </div>
+    </div>
+  </div>
+
+  <section class="section">
+    <div class="wrap">
+      <div class="sec-head">
+        <div class="eyebrow" style="margin:0 auto 14px;width:fit-content;">কেন এই বাল্ব দরকার</div>
+        <h2>একটা বাল্ব, তিনটা সমস্যার সমাধান</h2>
+        <p>রাতে অন্ধকারে সুইচ খোঁজা, বিদ্যুৎ বিল আর নিরাপত্তা — সব একসাথে সামলায়।</p>
+      </div>
+      <div class="benefit-grid">
+        <div class="benefit-card">
+          <span class="num">০১</span>
+          <h3>হাতড়াতে হবে না</h3>
+          <p>রাতে বাথরুমে বা সিঁড়িতে যাওয়ার সময় অন্ধকারে সুইচ খোঁজার ঝামেলা একদম শেষ। বাল্ব নিজেই আপনাকে দেখে জ্বলে ওঠে।</p>
+        </div>
+        <div class="benefit-card">
+          <span class="num">০২</span>
+          <h3>বিদ্যুৎ বিল কমে</h3>
+          <p>দিনে বা কেউ না থাকলে বাল্ব সম্পূর্ণ বন্ধ থাকে। শুধু দরকারের সময়টুকু জ্বলে, তাই মাস শেষে বিল কম আসে।</p>
+        </div>
+        <div class="benefit-card">
+          <span class="num">০৩</span>
+          <h3>বাসার নিরাপত্তা বাড়ে</h3>
+          <p>গেট, গ্যারেজ বা বারান্দায় লাগালে রাতে কেউ কাছে এলেই আলো জ্বলে ওঠে — অপরিচিত কারো আসা সাথে সাথে বোঝা যায়।</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section class="section" style="background:var(--navy-900);">
+    <div class="wrap compare-wrap">
+      <img src="/images/motion-sensor-offer-2.jpg" alt="Build quality comparison" width="520" height="360" loading="lazy" decoding="async">
+      <div class="compare-copy">
+        <div class="eyebrow">ভেতরের গঠন</div>
+        <h2>বাইরে থেকে সব বাল্ব একইরকম দেখায় — পার্থক্যটা ভেতরে</h2>
+        <p>সস্তা সেন্সর বাল্বে সাধারণত স্পঞ্জ রাবার আর প্লাস্টিক বেস থাকে, যা গরমে ঝুঁকিপূর্ণ হয়ে যায়। এই বাল্বে বিল্ট-ইন করা হয়েছে:</p>
+        <ul class="compare-list">
+          <li><span class="check">✓</span> ইন্টিগ্রেটেড কনস্ট্যান্ট কারেন্ট ড্রাইভ — বেশি স্টেবল ও নিরাপদ</li>
+          <li><span class="check">✓</span> হাই-কোয়ালিটি অ্যালুমিনিয়াম বেস — দ্রুত তাপ বের হয়, LED চিপ বেশিদিন টেকে</li>
+          <li><span class="check">✓</span> ননফ্লেমেবল ডিজাইন — গরমে সেফটি রিস্ক নেই</li>
+          <li><span class="check">✓</span> ৬০,০০০+ ঘণ্টা আয়ুষ্কাল, CE ও RoHS সার্টিফাইড</li>
+        </ul>
+      </div>
+    </div>
+  </section>
+
+  <section class="section">
+    <div class="wrap">
+      <div class="sec-head">
+        <div class="eyebrow" style="margin:0 auto 14px;width:fit-content;">স্পেসিফিকেশন</div>
+        <h2>টেকনিক্যাল ডিটেইলস</h2>
+      </div>
+      <div class="specs-panel">
+        <img src="/images/motion-sensor-offer-3.jpg" alt="Product specs" width="400" height="320" loading="lazy" decoding="async">
+        <div>
+          <table class="spec-table">
+            <tr><td>বেস টাইপ</td><td>E27 (B22 ভার্সনও পাওয়া যায়)</td></tr>
+            <tr><td>ওয়াট</td><td><div class="watt-pills"><span>15W</span></div></td></tr>
+            <tr><td>ভোল্টেজ</td><td>Wide Voltage AC 85V–265V (লো-ভোল্টেজেও কাজ করে)</td></tr>
+            <tr><td>সেন্সর</td><td>PIR মোশন সেন্সর + লাইট সেন্সর</td></tr>
+            <tr><td>ডিটেকশন রেঞ্জ</td><td>৩–৬ মিটার</td></tr>
+            <tr><td>কালার অপশন</td><td>Cool White / Warm White</td></tr>
+            <tr><td>অটো-অফ টাইমার</td><td>মোশন না পেলে ৩০-৪৫ সেকেন্ড পর নিভে যায়</td></tr>
+            <tr><td>বডি ম্যাটেরিয়াল</td><td>PC + অ্যালুমিনিয়াম</td></tr>
+            <tr><td>আয়ুষ্কাল</td><td>৬০,০০০+ ঘণ্টা</td></tr>
+            <tr><td>সার্টিফিকেশন</td><td>CE, RoHS</td></tr>
+          </table>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section class="section order-section" id="order">
+    <div class="wrap order-grid">
+      <div class="price-card">
+        <% if (saveAmt > 0) { %><span class="save-badge"><%= saveAmt.toLocaleString('en-US') %> টাকা ছাড়</span><% } %>
+        <div class="price-row">
+          <% if (original > price) { %><span class="old">৳<%= original.toLocaleString('en-US') %></span><% } %>
+          <span class="new">৳<%= price.toLocaleString('en-US') %></span>
+        </div>
+        <div class="unit">প্রতি পিস (COD)</div>
+        <ul>
+          <li><span class="dot">●</span> 15W — উজ্জ্বল ও পাওয়ারফুল আলো</li>
+          <li><span class="dot">●</span> Cool White বা Warm White</li>
+          <li><span class="dot">●</span> ক্যাশ অন ডেলিভারি — হাতে পেয়ে টাকা দিন</li>
+          <li><span class="dot">●</span> সারা বাংলাদেশে হোম ডেলিভারি</li>
+        </ul>
+        <img src="/images/motion-sensor-offer-4.jpg" alt="LED Bulb" width="320" height="240" loading="lazy" decoding="async">
+      </div>
+
+      <div class="order-form">
+        <h3>অর্ডার ফর্ম পূরণ করুন</h3>
+        <p class="sub">নাম, ফোন ও ঠিকানা দিন — ক্যাশ অন ডেলিভারিতে পণ্য হাতে পাবেন।</p>
+        <% if (typeof productMissing !== 'undefined' && productMissing) { %>
+        <div class="missing-note">অর্ডার চালু করতে আগে প্রোডাক্ট সিড করুন (<code>npm run seed:motion-sensor-offer</code>)।</div>
+        <% } %>
+        <form id="offerMsForm" novalidate<% if (typeof productMissing !== 'undefined' && productMissing) { %> data-product-missing="1"<% } %>>
+          <input type="hidden" id="offerProductId" value="<%= productId %>">
+          <input type="hidden" id="offerSizeLabel" value="<%= sizeLabel %>">
+          <input type="hidden" id="offerUnitPrice" value="<%= price %>">
+          <input type="hidden" id="offerInsideFee" value="<%= insideFee %>">
+          <input type="hidden" id="offerOutsideFee" value="<%= outsideFee %>">
+          <input type="hidden" id="offerFreeMin" value="<%= freeMin %>">
+
+          <div class="field">
+            <label for="offerName">আপনার নাম *</label>
+            <input type="text" id="offerName" name="name" autocomplete="name" required placeholder="যেমন: রহিম উদ্দিন">
+          </div>
+          <div class="field-row">
+            <div class="field">
+              <label for="offerPhone">মোবাইল নম্বর *</label>
+              <input type="tel" id="offerPhone" name="phone" autocomplete="tel" required placeholder="01XXXXXXXXX">
+            </div>
+            <div class="field">
+              <label for="offerQty">পরিমাণ</label>
+              <div class="qty-box">
+                <button type="button" id="qtyMinus" aria-label="কমান">−</button>
+                <input type="text" id="offerQty" value="1" readonly>
+                <button type="button" id="qtyPlus" aria-label="বাড়ান">+</button>
+              </div>
+            </div>
+          </div>
+          <div class="field">
+            <label for="offerAddress">সম্পূর্ণ ঠিকানা *</label>
+            <textarea id="offerAddress" name="address" rows="3" required placeholder="বাসা/হোল্ডিং নম্বর, রোড, থানা, জেলা"></textarea>
+          </div>
+
+          <fieldset class="area-fieldset">
+            <legend>ডেলিভারি এরিয়া *</legend>
+            <label class="area-option">
+              <input type="radio" name="deliveryArea" value="inside_dhaka" checked>
+              <span>ঢাকার ভিতরে <em id="offerInsideLabel">৳<%= insideFee %></em></span>
+            </label>
+            <label class="area-option">
+              <input type="radio" name="deliveryArea" value="outside_dhaka">
+              <span>ঢাকার বাইরে <em id="offerOutsideLabel">৳<%= outsideFee %></em></span>
+            </label>
+          </fieldset>
+
+          <div class="field">
+            <label for="offerNote">অতিরিক্ত নোট (ঐচ্ছিক)</label>
+            <input type="text" id="offerNote" name="note" placeholder="যেমন: কল করার সময়">
+          </div>
+
+          <div class="order-total">
+            <span>সর্বমোট (COD)</span>
+            <span class="amt" id="totalAmt">৳<%= (price + Number(insideFee)).toLocaleString('en-US') %></span>
+          </div>
+
+          <button type="submit" class="submit-btn" id="offerSubmitBtn"<% if (typeof productMissing !== 'undefined' && productMissing) { %> disabled<% } %>>অর্ডার কনফার্ম করুন</button>
+          <p class="cod-note">🚚 কোনো অগ্রিম টাকা লাগবে না — পণ্য হাতে পেয়ে টাকা দিন</p>
+          <p class="form-error" id="offerFormError"></p>
+        </form>
+      </div>
+    </div>
+  </section>
+
+  <section class="section">
+    <div class="wrap" style="max-width:760px;">
+      <div class="sec-head">
+        <h2>সচরাচর জিজ্ঞাসা</h2>
+      </div>
+      <details class="faq-item" open>
+        <summary>বাল্ব দিনে কি ভুলবশত জ্বলে থাকবে?</summary>
+        <p>না। বাল্বে লাইট সেন্সর আছে, তাই পর্যাপ্ত আলো থাকলে এটি মোশন ডিটেক্ট করলেও জ্বলবে না। শুধু অন্ধকার পরিবেশে কাজ করে।</p>
+      </details>
+      <details class="faq-item">
+        <summary>কতদূর থেকে মোশন ডিটেক্ট করে?</summary>
+        <p>প্রায় ৩ থেকে ৬ মিটার রেঞ্জের মধ্যে মানুষ বা প্রাণীর নড়াচড়া শনাক্ত করতে পারে।</p>
+      </details>
+      <details class="faq-item">
+        <summary>ভোল্টেজ ওঠানামা করলে সমস্যা হবে?</summary>
+        <p>না, এটি Wide Voltage (AC 85V-265V) সাপোর্ট করে, তাই লো-ভোল্টেজ এলাকাতেও স্বাভাবিকভাবে কাজ করে।</p>
+      </details>
+      <details class="faq-item">
+        <summary>এক্সচেঞ্জ বা রিটার্ন করা যাবে?</summary>
+        <p>পণ্য হাতে পাওয়ার সময় ভালোভাবে চেক করে নিন। ডেলিভারির সময় কোনো ত্রুটি পেলে সাথে সাথে ডেলিভারিম্যানকে জানান।</p>
+      </details>
+    </div>
+  </section>
+
+  <footer class="offer-ms-footer">
+    © ২০২৬ WallNest BD — স্মার্ট মোশন সেন্সর LED বাল্ব
+  </footer>
+</main>
+
+<div class="toast-container" id="toastContainer"></div>
+<script>
+  window.__WN_STORE__ = <%- JSON.stringify(storeSettings || {}) %>;
+  window.__OFFER_MS__ = <%- JSON.stringify({
+    productId: productId,
+    sizeLabel: sizeLabel,
+    price: price,
+    insideFee: Number(insideFee),
+    outsideFee: Number(outsideFee),
+    freeMin: Number(freeMin),
+  }).replace(/</g, '\\u003c') %>;
+</script>
+<script src="/js/offer-motion-sensor.js?v=3"></script>
+</body>
+</html>

@@ -15,7 +15,8 @@
     "setup:db": "node scripts/setup-db.js",
     "migrate": "node scripts/migrate.js",
     "seed": "node scripts/seed.js",
-    "seed:reviews": "node scripts/seed-reviews.js"
+    "seed:reviews": "node scripts/seed-reviews.js",
+    "seed:motion-sensor-offer": "node scripts/seed-motion-sensor-offer.js"
   },
   "engines": {
     "node": ">=18"

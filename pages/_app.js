@@ -12,6 +12,11 @@ import {
   ACCOUNT_CSS_ID,
   ensureAccountStylesheet,
 } from '../lib/client/ensureAccountStylesheet';
+import {
+  OFFER_MS_CSS_HREF,
+  OFFER_MS_CSS_ID,
+  ensureOfferMotionSensorStylesheet,
+} from '../lib/client/ensureOfferStylesheet';
 import { getPublicSupabaseConfig } from '../lib/auth/publicSupabaseConfig';
 const FastNav = dynamic(() => import('../components/FastNav'), { ssr: false });
 
@@ -25,6 +30,8 @@ function isStoreRoute(pathname) {
     pathname === '/checkout' ||
     pathname === '/cart' ||
     pathname === '/reviews' ||
+    pathname === '/offer/motion-sensor-light' ||
+    pathname === '/offer/motion-sensor-light/thank-you' ||
     pathname.startsWith('/product/') ||
     pathname.startsWith('/category/')
   );
@@ -34,13 +41,16 @@ export default function App({ Component, pageProps }) {
   const router = useRouter();
   const isAdmin = router.pathname.startsWith('/admin');
   const isAccount = router.pathname.startsWith('/account');
+  const isOfferMotion =
+    router.pathname === '/offer/motion-sensor-light' ||
+    router.pathname === '/offer/motion-sensor-light/thank-you';
   const useStoreShell =
     !isAdmin && !isAccount && isStoreRoute(router.pathname) && pageProps.bodyHtml;
   const useAccountShell =
     isAccount && pageProps.bodyHtml;
 
   const isAuthCallback = router.pathname === '/auth/callback';
-  const showFastNav = !isAdmin && !isAuthCallback;
+  const showFastNav = !isAdmin && !isAuthCallback && !isOfferMotion;
 
   useEffect(() => {
     if (isAccount) {
@@ -53,6 +63,15 @@ export default function App({ Component, pageProps }) {
     }
     document.body.classList.remove('account-page');
   }, [isAccount]);
+
+  useEffect(() => {
+    if (isOfferMotion) {
+      document.body.classList.add('offer-ms-page');
+      ensureOfferMotionSensorStylesheet();
+      return () => document.body.classList.remove('offer-ms-page');
+    }
+    document.body.classList.remove('offer-ms-page');
+  }, [isOfferMotion]);
 
   return (
     <>
@@ -87,7 +106,7 @@ export default function App({ Component, pageProps }) {
               href="https://fonts.googleapis.com/css2?family=Syne:wght@400;500;600;700;800&family=Hind+Siliguri:wght@300;400;500;600;700&display=swap"
               rel="stylesheet"
             />
-            <link rel="stylesheet" href="/css/admin.css?v=9" />
+            <link rel="stylesheet" href="/css/admin.css?v=10" />
           </Head>
         </>
       ) : null}
@@ -103,6 +122,20 @@ export default function App({ Component, pageProps }) {
             />
           </Head>
         </>
+      ) : null}
+      {isOfferMotion ? (
+        <Head>
+          <link
+            id={OFFER_MS_CSS_ID}
+            rel="stylesheet"
+            href={OFFER_MS_CSS_HREF}
+            key="offer-motion-sensor-css"
+          />
+          <link
+            href="https://fonts.googleapis.com/css2?family=Baloo+Da+2:wght@500;600;700;800&family=Hind+Siliguri:wght@400;500;600;700&family=JetBrains+Mono:wght@500;700&display=swap"
+            rel="stylesheet"
+          />
+        </Head>
       ) : null}
       {useStoreShell ? (
         <StorePage pageProps={pageProps} />

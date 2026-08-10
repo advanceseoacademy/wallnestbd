@@ -1,0 +1,64 @@
+<!DOCTYPE html>
+<html lang="bn">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<%- include('../partials/favicon') %>
+<%- include('../partials/seo-meta', { seo: typeof seo !== 'undefined' ? seo : null, siteUrl: typeof siteUrl !== 'undefined' ? siteUrl : '' }) %>
+<% if (typeof seo === 'undefined' || !seo) { %><title>অর্ডার ধন্যবাদ — WallNest BD</title><% } %>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Baloo+Da+2:wght@500;600;700;800&family=Hind+Siliguri:wght@400;500;600;700&family=JetBrains+Mono:wght@500;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="/css/offer-motion-sensor.css?v=5">
+</head>
+<body class="offer-ms-page">
+<%
+  const orderNumber = typeof prefillOrder !== 'undefined' && prefillOrder ? String(prefillOrder) : '';
+%>
+
+<main class="offer-ms">
+  <div class="topbar offer-ms-topbar">
+    <div class="topbar-inner">
+      <a href="/offer/motion-sensor-light" class="brand" style="text-decoration:none;color:inherit;">
+        <span class="brand-dot"></span> WallNest <span class="brand-sub">স্মার্ট সেন্সর বাল্ব</span>
+      </a>
+    </div>
+  </div>
+
+  <section class="thank-hero">
+    <div class="wrap thank-panel">
+      <div class="thank-check" aria-hidden="true">✓</div>
+      <h1>ধন্যবাদ! আপনার অর্ডার নেওয়া হয়েছে</h1>
+      <p class="thank-lead">শীঘ্রই আমাদের টিম আপনাকে কল করে অর্ডার কনফার্ম করবে। ক্যাশ অন ডেলিভারি — পণ্য হাতে পেয়ে টাকা দিন।</p>
+
+      <% if (orderNumber) { %>
+      <div class="thank-order-box">
+        <span class="thank-order-label">আপনার অর্ডার নম্বর</span>
+        <strong class="thank-order-id" id="thankOrderNumber"><%= orderNumber %></strong>
+      </div>
+      <% } else { %>
+      <p class="thank-lead">অর্ডার নম্বর না পেলে আমাদের সাথে যোগাযোগ করুন।</p>
+      <% } %>
+
+      <ul class="thank-steps">
+        <li><span>১</span> আমরা ফোন করে কনফার্ম করব</li>
+        <li><span>২</span> পণ্য প্যাক করে পাঠানো হবে</li>
+        <li><span>৩</span> হাতে পেয়ে ক্যাশ দিয়ে পরিশোধ করুন</li>
+      </ul>
+
+      <div class="thank-actions">
+        <% if (orderNumber) { %>
+        <a class="btn-primary" href="/track-order?order=<%= encodeURIComponent(orderNumber) %>">অর্ডার ট্র্যাক করুন</a>
+        <% } else { %>
+        <a class="btn-primary" href="/track-order">অর্ডার ট্র্যাক করুন</a>
+        <% } %>
+        <a class="thank-secondary" href="/offer/motion-sensor-light">অফার পেজে ফিরুন</a>
+      </div>
+    </div>
+  </section>
+
+  <footer class="offer-ms-footer">
+    © <%= new Date().getFullYear() %> WallNest BD · ক্যাশ অন ডেলিভারি
+  </footer>
+</main>
+</body>
+</html>

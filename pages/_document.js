@@ -6,15 +6,19 @@ class MyDocument extends Document {
     const pathname = ctx.pathname || '';
     const isAdmin = pathname.startsWith('/admin');
     const isAccount = pathname.startsWith('/account');
+    const isOfferMotion =
+      pathname === '/offer/motion-sensor-light' ||
+      pathname === '/offer/motion-sensor-light/thank-you';
     return {
       ...initialProps,
       skipStoreCss: isAdmin,
       isAccount,
+      isOfferMotion,
     };
   }
 
   render() {
-    const { skipStoreCss, isAccount } = this.props;
+    const { skipStoreCss, isAccount, isOfferMotion } = this.props;
     return (
       <Html lang="bn">
         <Head>
@@ -26,7 +30,7 @@ class MyDocument extends Document {
           <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="anonymous" />
           {!skipStoreCss ? (
             <>
-              <link rel="stylesheet" href="/css/style.css?v=77" />
+              <link rel="stylesheet" href="/css/style.css?v=78" />
               <link
                 href="https://fonts.googleapis.com/css2?family=Hind+Siliguri:wght@300;400;500;600;700&family=DM+Sans:wght@300;400;500;600;700&display=swap"
                 rel="stylesheet"
@@ -36,8 +40,11 @@ class MyDocument extends Document {
           {isAccount ? (
             <link rel="stylesheet" href="/css/user-dashboard.css?v=26" />
           ) : null}
+          {isOfferMotion ? (
+            <link rel="stylesheet" href="/css/offer-motion-sensor.css?v=5" />
+          ) : null}
         </Head>
-        <body>
+        <body className={isOfferMotion ? 'offer-ms-page' : undefined}>
           <Main />
           <NextScript />
         </body>
