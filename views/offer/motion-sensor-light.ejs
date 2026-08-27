@@ -8,7 +8,7 @@
 <% if (typeof seo === 'undefined' || !seo) { %><title>স্মার্ট মোশন সেন্সর LED বাল্ব — WallNest BD</title><% } %>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Baloo+Da+2:wght@500;600;700;800&family=Hind+Siliguri:wght@400;500;600;700&family=JetBrains+Mono:wght@500;700&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="/css/offer-motion-sensor.css?v=7">
+<link rel="stylesheet" href="/css/offer-motion-sensor.css?v=8">
 </head>
 <body class="offer-ms-page">
 <%
@@ -212,7 +212,7 @@
     </div>
   </section>
 
-  <section class="section order-section" id="order">
+  <section class="section order-section">
     <div class="wrap order-grid">
       <div class="price-card">
         <% if (saveAmt > 0) { %><span class="save-badge"><%= saveAmt.toLocaleString('en-US') %> টাকা ছাড়</span><% } %>
@@ -230,7 +230,7 @@
         <img src="/images/motion-sensor-offer-4.jpg" alt="LED Bulb" width="320" height="240" loading="lazy" decoding="async">
       </div>
 
-      <div class="order-form">
+      <div class="order-form" id="order">
         <h3>অর্ডার ফর্ম পূরণ করুন</h3>
         <p class="sub">নাম, ফোন ও ঠিকানা দিন — ক্যাশ অন ডেলিভারিতে পণ্য হাতে পাবেন।</p>
         <% if (typeof productMissing !== 'undefined' && productMissing) { %>
