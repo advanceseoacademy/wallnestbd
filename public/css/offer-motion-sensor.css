@@ -138,6 +138,28 @@ body.offer-ms-page {
   }
   .price-tag .old{color:var(--slate);text-decoration:line-through;font-size:16px;}
   .price-tag .new{color:var(--amber);font-size:28px;font-weight:800;}
+  .delivery-note{display:block;color:var(--slate);font-size:14px;margin-top:2px;}
+  .offer-urgency{
+    display:flex;align-items:center;gap:14px;flex-wrap:wrap;
+    margin-top:18px;
+  }
+  .stock-alert,.countdown-label{
+    display:inline-flex;align-items:center;gap:5px;
+    border-radius:999px;padding:7px 12px;font-size:14px;font-weight:600;
+  }
+  .stock-alert{
+    color:#fecaca;background:rgba(230,72,79,0.14);
+    border:1px solid rgba(230,72,79,0.35);
+  }
+  .stock-alert strong{color:#fca5a5;}
+  .countdown-label{
+    color:var(--slate-light);background:rgba(255,255,255,0.06);
+    border:1px solid rgba(255,255,255,0.12);
+  }
+  .countdown-label strong{
+    color:var(--amber);font-family:'JetBrains Mono',monospace;
+    font-size:16px;letter-spacing:1px;
+  }
   .hero-img-frame{
     position:relative;
     background:radial-gradient(circle at 50% 30%, rgba(255,182,72,0.18), transparent 65%);
@@ -165,6 +187,18 @@ body.offer-ms-page {
   }
   .trust-row span{display:flex;align-items:center;gap:6px;}
   .trust-row b{color:var(--slate-light);}
+  .cert-row{
+    display:flex;align-items:center;gap:10px;flex-wrap:wrap;
+    margin-top:18px;
+  }
+  .cert-badge{
+    display:inline-flex;align-items:center;gap:6px;
+    padding:7px 10px;border:1px solid rgba(255,182,72,0.35);
+    border-radius:10px;background:rgba(255,182,72,0.10);
+  }
+  .cert-badge strong{color:var(--amber);font-size:16px;}
+  .cert-badge em{color:var(--slate-light);font-size:12px;font-style:normal;}
+  .cert-trust{color:var(--slate-light);font-size:14px;font-weight:600;}
 
   /* ===== day/night strip (signature element) ===== */
   .cycle{
@@ -369,6 +403,7 @@ body.offer-ms-page {
     margin:22px 0;font-weight:700;
   }
   .order-total .amt{color:var(--amber-deep);font-size:22px;}
+  .order-total .amt{font-size:28px;font-weight:800;}
   .submit-btn{
     width:100%;
     background:linear-gradient(180deg,var(--amber),var(--amber-deep));
@@ -403,6 +438,25 @@ body.offer-ms-page {
     padding:36px 0;text-align:center;color:var(--slate);font-size:15px;
     border-top:1px solid rgba(255,182,72,0.1);
   }
+  .reviews-section{background:var(--navy-950);}
+  .reviews-grid{
+    display:grid;grid-template-columns:repeat(3,1fr);gap:18px;
+  }
+  .review-card{
+    position:relative;
+    background:var(--navy-800);border:1px solid rgba(255,182,72,0.12);
+    border-radius:var(--radius);padding:22px 20px;
+  }
+  .review-card::before{
+    content:'👤';display:flex;align-items:center;justify-content:center;
+    width:32px;height:32px;border-radius:50%;margin-bottom:8px;
+    background:rgba(255,255,255,0.10);font-size:17px;
+  }
+  .review-stars{color:var(--amber);font-size:19px;letter-spacing:2px;margin-bottom:10px;}
+  .review-card p{color:var(--slate-light);font-size:16px;line-height:1.55;min-height:50px;margin-bottom:16px;}
+  .review-card strong{display:block;color:var(--warm-white);font-size:16px;}
+  .review-card span{color:var(--slate);font-size:13px;}
+  .mobile-sticky-order{display:none;}
 
   @media (max-width:860px){
     .hero{padding:36px 0 28px;}
@@ -411,6 +465,7 @@ body.offer-ms-page {
     .compare-wrap img{max-height:280px;}
     .specs-panel img{max-height:260px;}
     .price-card > img{max-height:240px;}
+    .reviews-grid{grid-template-columns:repeat(2,1fr);}
   }
 
   @media (max-width:600px){
@@ -422,6 +477,20 @@ body.offer-ms-page {
     .compare-wrap img{max-height:260px;}
     .specs-panel img{max-height:240px;}
     .price-card > img{max-height:220px;}
+    .offer-urgency{align-items:stretch;flex-direction:column;gap:8px;}
+    .stock-alert,.countdown-label{justify-content:center;}
+    .reviews-grid{grid-template-columns:1fr;}
+    .review-card p{min-height:0;}
+    .mobile-sticky-order{
+      position:fixed;display:flex;align-items:center;justify-content:space-between;
+      left:12px;right:12px;bottom:12px;z-index:100;
+      padding:12px 16px;border-radius:14px;
+      background:linear-gradient(180deg,var(--amber),var(--amber-deep));
+      color:var(--navy-950);font-size:17px;font-weight:800;
+      box-shadow:0 8px 26px rgba(0,0,0,0.4);
+    }
+    .mobile-sticky-order span{font-family:'JetBrains Mono',monospace;font-size:15px;}
+    body.offer-ms-page{padding-bottom:76px;}
   }
 
 /* WallNest offer extras */

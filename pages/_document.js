@@ -49,7 +49,7 @@ class MyDocument extends Document {
             <link rel="stylesheet" href="/css/user-dashboard.css?v=26" />
           ) : null}
           {isOfferMotion ? (
-            <link rel="stylesheet" href="/css/offer-motion-sensor.css?v=5" />
+            <link rel="stylesheet" href="/css/offer-motion-sensor.css?v=7" />
           ) : null}
           {pixelScript ? (
             <script

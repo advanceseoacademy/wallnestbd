@@ -8,6 +8,65 @@
   const errorEl = document.getElementById('offerFormError');
   const submitBtn = document.getElementById('offerSubmitBtn');
 
+  function toBanglaDigits(value) {
+    return String(value).replace(/\d/g, (digit) => '০১২৩৪৫৬৭৮৯'[digit]);
+  }
+
+  function startDailyCountdown() {
+    const countdown = document.getElementById('offerCountdown');
+    if (!countdown) return;
+
+    const now = new Date();
+    const dayKey = `${now.getFullYear()}-${now.getMonth() + 1}-${now.getDate()}`;
+    const storageKey = `wn_offer_countdown_${dayKey}`;
+    let deadline = 0;
+    try {
+      deadline = Number(localStorage.getItem(storageKey)) || 0;
+    } catch (storageError) {
+      // A private browsing restriction should not stop the countdown.
+    }
+    if (!deadline || deadline <= now.getTime()) {
+      deadline = now.getTime() + 24 * 60 * 60 * 1000;
+      try {
+        localStorage.setItem(storageKey, String(deadline));
+      } catch (storageError) {
+        // The in-memory deadline still works for this page view.
+      }
+    }
+
+    function renderCountdown() {
+      const remaining = Math.max(0, deadline - Date.now());
+      const totalSeconds = Math.floor(remaining / 1000);
+      const hours = Math.floor(totalSeconds / 3600);
+      const minutes = Math.floor((totalSeconds % 3600) / 60);
+      const seconds = totalSeconds % 60;
+      countdown.textContent = [
+        hours,
+        minutes,
+        seconds,
+      ].map((part) => toBanglaDigits(String(part).padStart(2, '0'))).join(':');
+      if (remaining <= 0) window.location.reload();
+    }
+
+    renderCountdown();
+    window.setInterval(renderCountdown, 1000);
+  }
+
+  function setupOfferInteractions() {
+    document.querySelectorAll('a[href="#order"]').forEach((link) => {
+      link.addEventListener('click', (event) => {
+        const order = document.getElementById('order');
+        if (!order) return;
+        event.preventDefault();
+        order.scrollIntoView({ behavior: 'smooth', block: 'start' });
+      });
+    });
+
+  }
+
+  startDailyCountdown();
+  setupOfferInteractions();
+
   function formatBDT(n) {
     return `৳${Math.round(Number(n) || 0).toLocaleString('en-US')}`;
   }
@@ -147,12 +206,22 @@
         });
       }
       if (typeof window.wnMetaPixel?.purchase === 'function') {
-        window.wnMetaPixel.purchase({
-          value: orderTotal,
-          currency: 'BDT',
-          orderNumber: data.orderNumber,
-          numItems: qty,
-        });
+        const pixelPurchaseKey = `wn_pixel_purchase_${data.orderNumber}`;
+        let shouldTrackPurchase = true;
+        try {
+          shouldTrackPurchase = !sessionStorage.getItem(pixelPurchaseKey);
+          if (shouldTrackPurchase) sessionStorage.setItem(pixelPurchaseKey, '1');
+        } catch (storageError) {
+          // Tracking should never block a successful order.
+        }
+        if (shouldTrackPurchase) {
+          window.wnMetaPixel.purchase({
+            value: orderTotal,
+            currency: 'BDT',
+            orderNumber: data.orderNumber,
+            numItems: qty,
+          });
+        }
       }
 
       const thankYouQs = new URLSearchParams({

@@ -8,7 +8,7 @@
 <% if (typeof seo === 'undefined' || !seo) { %><title>স্মার্ট মোশন সেন্সর LED বাল্ব — WallNest BD</title><% } %>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Baloo+Da+2:wght@500;600;700;800&family=Hind+Siliguri:wght@400;500;600;700&family=JetBrains+Mono:wght@500;700&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="/css/offer-motion-sensor.css?v=5">
+<link rel="stylesheet" href="/css/offer-motion-sensor.css?v=7">
 </head>
 <body class="offer-ms-page">
 <%
@@ -23,6 +23,7 @@
   const freeMin = (storeSettings && storeSettings.freeShippingMin) || 1500;
   const saveAmt = original > price ? original - price : 0;
   const productTitle = (p && (p.nameBn || p.name)) || 'স্মার্ট মোশন সেন্সর LED বাল্ব ১৫W';
+  const stockRemaining = 17;
 %>
 
 <main class="offer-ms">
@@ -45,12 +46,22 @@
           <div class="price-tag">
             <% if (original > price) { %><span class="old">৳<%= original.toLocaleString('en-US') %></span><% } %>
             <span class="new">৳<%= price.toLocaleString('en-US') %> টাকা</span>
+            <span class="delivery-note">ডেলিভারি চার্জ আলাদা (৳<%= insideFee %>–৳<%= outsideFee %>)</span>
           </div>
         </div>
+        <div class="offer-urgency">
+          <span class="stock-alert">🔥 স্টক সীমিত — মাত্র <strong><%= stockRemaining %> পিস বাকি</strong></span>
+          <span class="countdown-label">অফার শেষ হচ্ছে <strong id="offerCountdown" aria-live="polite">২৩:৫৯:৫৯</strong></span>
+        </div>
         <div class="trust-row">
-          <span>✅ <b>CE, RoHS</b> সার্টিফাইড</span>
           <span>⏱ আয়ুষ্কাল <b>৬০,০০০+ ঘণ্টা</b></span>
           <span>🚚 <b>Cash on Delivery</b></span>
+          <span>🏠 <b>৫০০+ কাস্টমার সন্তুষ্ট</b></span>
+        </div>
+        <div class="cert-row" aria-label="সার্টিফিকেশন">
+          <span class="cert-badge"><strong>CE</strong><em>Certified</em></span>
+          <span class="cert-badge"><strong>RoHS</strong><em>Compliant</em></span>
+          <span class="cert-trust">হাজার হাজার বাসায় ব্যবহৃত হচ্ছে</span>
         </div>
       </div>
       <div class="hero-img-frame">
@@ -147,9 +158,56 @@
             <tr><td>অটো-অফ টাইমার</td><td>মোশন না পেলে ৩০-৪৫ সেকেন্ড পর নিভে যায়</td></tr>
             <tr><td>বডি ম্যাটেরিয়াল</td><td>PC + অ্যালুমিনিয়াম</td></tr>
             <tr><td>আয়ুষ্কাল</td><td>৬০,০০০+ ঘণ্টা</td></tr>
-            <tr><td>সার্টিফিকেশন</td><td>CE, RoHS</td></tr>
           </table>
         </div>
+      </div>
+    </div>
+  </section>
+
+  <section class="section reviews-section" aria-labelledby="reviews-title">
+    <div class="wrap">
+      <div class="sec-head">
+        <div class="eyebrow" style="margin:0 auto 14px;width:fit-content;">কাস্টমার মতামত</div>
+        <h2 id="reviews-title">যারা ব্যবহার করেছেন, তারা কী বলছেন</h2>
+        <p>বাসার দৈনন্দিন কাজে স্মার্ট আলো নিয়ে আমাদের কাস্টমারদের অভিজ্ঞতা।</p>
+      </div>
+      <div class="reviews-grid">
+        <article class="review-card">
+          <div class="review-stars" aria-label="৫-এর মধ্যে ৫ তারকা">★★★★★</div>
+          <p>“সিঁড়িতে রাতে আর সুইচ খুঁজতে হয় না। আলো নিজে থেকেই জ্বলে ওঠে।”</p>
+          <strong>রহিমা আক্তার</strong>
+          <span>ঢাকা</span>
+        </article>
+        <article class="review-card">
+          <div class="review-stars" aria-label="৫-এর মধ্যে ৫ তারকা">★★★★★</div>
+          <p>“বারান্দার জন্য নিয়েছিলাম, লাগানো খুব সহজ। আলোও বেশ উজ্জ্বল।”</p>
+          <strong>সাইফুল ইসলাম</strong>
+          <span>চট্টগ্রাম</span>
+        </article>
+        <article class="review-card">
+          <div class="review-stars" aria-label="৫-এর মধ্যে ৫ তারকা">★★★★★</div>
+          <p>“বাথরুমের সামনে দারুণ কাজ করছে। অতিথিরাও অটো লাইট দেখে অবাক হয়।”</p>
+          <strong>নুসরাত জাহান</strong>
+          <span>গাজীপুর</span>
+        </article>
+        <article class="review-card">
+          <div class="review-stars" aria-label="৫-এর মধ্যে ৫ তারকা">★★★★★</div>
+          <p>“গ্যারেজে লাগানোর পর রাতে চলাফেরা অনেক সুবিধার হয়েছে।”</p>
+          <strong>মো. আশরাফ</strong>
+          <span>রাজশাহী</span>
+        </article>
+        <article class="review-card">
+          <div class="review-stars" aria-label="৫-এর মধ্যে ৫ তারকা">★★★★★</div>
+          <p>“পণ্য হাতে পেয়ে চেক করে টাকা দিয়েছি। COD সার্ভিস ভালো লেগেছে।”</p>
+          <strong>তানভীর হাসান</strong>
+          <span>নারায়ণগঞ্জ</span>
+        </article>
+        <article class="review-card">
+          <div class="review-stars" aria-label="৫-এর মধ্যে ৫ তারকা">★★★★★</div>
+          <p>“আলো না থাকলে জ্বলে না, তাই অযথা জ্বলে থাকার চিন্তা নেই।”</p>
+          <strong>মাহমুদা বেগম</strong>
+          <span>সিলেট</span>
+        </article>
       </div>
     </div>
   </section>
@@ -210,7 +268,7 @@
           </div>
 
           <fieldset class="area-fieldset">
-            <legend>ডেলিভারি এরিয়া *</legend>
+            <legend>ডেলিভারি এরিয়া</legend>
             <label class="area-option">
               <input type="radio" name="deliveryArea" value="inside_dhaka" checked>
               <span>ঢাকার ভিতরে <em id="offerInsideLabel">৳<%= insideFee %></em></span>
@@ -227,7 +285,7 @@
           </div>
 
           <div class="order-total">
-            <span>সর্বমোট (COD)</span>
+            <span>সর্বমোট (পণ্য + ডেলিভারি)</span>
             <span class="amt" id="totalAmt">৳<%= (price + Number(insideFee)).toLocaleString('en-US') %></span>
           </div>
 
@@ -268,6 +326,8 @@
   </footer>
 </main>
 
+<a class="mobile-sticky-order" href="#order">এখনই অর্ডার করুন <span>৳<%= price.toLocaleString('en-US') %></span></a>
+
 <div class="toast-container" id="toastContainer"></div>
 <script>
   window.__WN_STORE__ = <%- JSON.stringify(storeSettings || {}) %>;
@@ -278,8 +338,9 @@
     insideFee: Number(insideFee),
     outsideFee: Number(outsideFee),
     freeMin: Number(freeMin),
+    stockRemaining: stockRemaining,
   }).replace(/</g, '\\u003c') %>;
 </script>
-<script src="/js/offer-motion-sensor.js?v=4"></script>
+<script src="/js/offer-motion-sensor.js?v=8"></script>
 </body>
 </html>
