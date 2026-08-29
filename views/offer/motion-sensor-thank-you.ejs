@@ -63,31 +63,47 @@
 <script src="/js/meta-pixel.js?v=1"></script>
 <script>
 (function () {
+  if (window.__wnPurchaseTracked) return;
+  window.__wnPurchaseTracked = true;
+
   var params = new URLSearchParams(window.location.search);
   var orderNumber = params.get('order') || document.getElementById('thankOrderNumber')?.textContent?.trim() || '';
-  var value = Number(params.get('value') || 0);
-  var qty = Number(params.get('qty') || 1) || 1;
-  if (!orderNumber) return;
-  var key = 'wn_pixel_purchase_' + orderNumber;
-  try {
-    if (sessionStorage.getItem(key)) return;
-    sessionStorage.setItem(key, '1');
-  } catch (e) {}
-  function fire() {
-    if (!window.wnMetaPixel || typeof window.wnMetaPixel.purchase !== 'function') return false;
-    window.wnMetaPixel.purchase({
-      value: value,
-      currency: 'BDT',
-      orderNumber: orderNumber,
-      numItems: qty
+  var rawValue = params.get('value');
+  var rawQty = params.get('qty');
+  var value = parseFloat(rawValue);
+  var qty = parseInt(rawQty, 10);
+
+  if (!orderNumber || !isFinite(value) || value <= 0 || !isFinite(qty) || qty <= 0) {
+    console.warn('[meta-pixel] Purchase not sent — missing or invalid order/value/qty:', {
+      order: orderNumber,
+      value: rawValue,
+      qty: rawQty
     });
+    return;
+  }
+
+  function fire() {
+    if (typeof window.fbq !== 'function') return false;
+    window.fbq(
+      'track',
+      'Purchase',
+      {
+        value: value,
+        currency: 'BDT',
+        content_ids: ['motion-sensor-light'],
+        content_type: 'product',
+        num_items: qty
+      },
+      { eventID: orderNumber }
+    );
     return true;
   }
+
   if (!fire()) {
     var tries = 0;
-    var t = setInterval(function () {
+    var timer = setInterval(function () {
       tries += 1;
-      if (fire() || tries > 40) clearInterval(t);
+      if (fire() || tries > 40) clearInterval(timer);
     }, 50);
   }
 })();

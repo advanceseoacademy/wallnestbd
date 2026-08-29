@@ -205,24 +205,8 @@
           currency: 'BDT',
         });
       }
-      if (typeof window.wnMetaPixel?.purchase === 'function') {
-        const pixelPurchaseKey = `wn_pixel_purchase_${data.orderNumber}`;
-        let shouldTrackPurchase = true;
-        try {
-          shouldTrackPurchase = !sessionStorage.getItem(pixelPurchaseKey);
-          if (shouldTrackPurchase) sessionStorage.setItem(pixelPurchaseKey, '1');
-        } catch (storageError) {
-          // Tracking should never block a successful order.
-        }
-        if (shouldTrackPurchase) {
-          window.wnMetaPixel.purchase({
-            value: orderTotal,
-            currency: 'BDT',
-            orderNumber: data.orderNumber,
-            numItems: qty,
-          });
-        }
-      }
+      // Purchase is tracked on the thank-you page so it only fires once the
+      // order page has actually been reached.
 
       const thankYouQs = new URLSearchParams({
         order: data.orderNumber,
