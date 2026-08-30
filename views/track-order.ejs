@@ -51,6 +51,18 @@
     </div>
     <div class="track-address" id="resultAddress"></div>
 
+    <div class="track-courier" id="resultCourier" hidden>
+      <div class="track-courier-head">🚚 কুরিয়ার (Steadfast)</div>
+      <div class="track-courier-row">
+        <span>ট্র্যাকিং কোড</span>
+        <strong id="resultCourierCode">—</strong>
+      </div>
+      <div class="track-courier-row">
+        <span>কুরিয়ার স্ট্যাটাস</span>
+        <strong id="resultCourierStatus">—</strong>
+      </div>
+    </div>
+
     <div class="track-progress-wrap" id="trackProgressWrap">
       <div class="track-bar" id="trackingBar"></div>
     </div>
@@ -63,6 +75,6 @@
 <%- include('partials/site-footer') %>
 <%- include('partials/cart-modals') %>
 <script src="/js/app.js"></script>
-<script src="/js/track-order.js?v=2"></script>
+<script src="/js/track-order.js?v=3"></script>
 </body>
 </html>

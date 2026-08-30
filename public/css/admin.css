@@ -629,6 +629,40 @@ a.action-btn {
   border-color: rgba(220, 38, 38, 0.35);
 }
 
+/* ── COURIER (STEADFAST) ── */
+.courier-cell {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 4px;
+}
+.courier-code {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: 0.4px;
+}
+.courier-status {
+  font-size: 12px;
+  color: var(--muted2);
+}
+.courier-error {
+  font-size: 11px;
+  color: var(--red);
+  max-width: 180px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.courier-balance {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--muted2);
+}
+.courier-balance-low {
+  color: var(--red);
+}
+
 /* ── TOP PRODUCTS ── */
 .top-product-item {
   display: flex;

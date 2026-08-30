@@ -22,6 +22,7 @@ const {
   queueOrderConfirmationEmail,
   queueNewOrderOwnerEmail,
 } = require('../lib/email/mailer');
+const { queueConsignmentForOrder } = require('../lib/steadfast');
 const {
   registerUserWithVerification,
   resendVerificationLink,
@@ -290,6 +291,7 @@ router.post('/orders', async (req, res) => {
 
     queueOrderConfirmationEmail(order, orderItems);
     queueNewOrderOwnerEmail(order, orderItems);
+    queueConsignmentForOrder(order, orderItems);
 
     res.json({
       ok: true,

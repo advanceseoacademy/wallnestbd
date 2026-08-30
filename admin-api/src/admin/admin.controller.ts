@@ -73,6 +73,33 @@ export class AdminController {
     }
   }
 
+  @Post('orders/:id/courier')
+  async sendOrderToCourier(@Param('id') id: string) {
+    try {
+      return await bridge.sendOrderToCourier(id);
+    } catch (e) {
+      throw new BadRequestException(e.message);
+    }
+  }
+
+  @Post('orders/:id/courier/sync')
+  async syncOrderCourierStatus(@Param('id') id: string) {
+    try {
+      return await bridge.syncOrderCourierStatus(id);
+    } catch (e) {
+      throw new BadRequestException(e.message);
+    }
+  }
+
+  @Get('courier/balance')
+  async courierBalance() {
+    try {
+      return await bridge.getCourierBalance();
+    } catch (e) {
+      throw new BadRequestException(e.message);
+    }
+  }
+
   @Get('products')
   async products() {
     try {

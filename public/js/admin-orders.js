@@ -53,6 +53,44 @@
     load();
   }
 
+  async function sendToCourier(id) {
+    if (!confirm('এই অর্ডারটি Steadfast কুরিয়ারে পাঠাবেন?')) return;
+    const res = await adminApi(`/orders/${id}/courier`, { method: 'POST' });
+    if (typeof showToast === 'function') {
+      showToast(
+        res.alreadySent
+          ? 'এই অর্ডার আগেই কুরিয়ারে পাঠানো হয়েছে'
+          : `কুরিয়ারে পাঠানো হয়েছে — ট্র্যাকিং ${res.trackingCode || ''}`
+      );
+    }
+    load();
+  }
+
+  async function syncCourierStatus(id) {
+    const res = await adminApi(`/orders/${id}/courier/sync`, { method: 'POST' });
+    if (typeof showToast === 'function') {
+      showToast(`কুরিয়ার স্ট্যাটাস: ${res.courierStatusLabel || res.courierStatus || '—'}`);
+    }
+    load();
+  }
+
+  function courierCell(o) {
+    if (o.courierTrackingCode) {
+      return `<div class="courier-cell">
+        <span class="courier-code">${o.courierTrackingCode}</span>
+        <span class="courier-status">${o.courierStatusLabel || '—'}</span>
+        <button class="action-btn" data-courier-sync="${o.id}" title="কুরিয়ার স্ট্যাটাস রিফ্রেশ করুন">🔄</button>
+      </div>`;
+    }
+    const errorNote = o.courierError
+      ? `<span class="courier-error" title="${o.courierError}">⚠️ ${o.courierError}</span>`
+      : '';
+    return `<div class="courier-cell">
+      <button class="action-btn" data-courier-send="${o.id}">🚚 পাঠান</button>
+      ${errorNote}
+    </div>`;
+  }
+
   async function load() {
     const { orders } = await adminApi('/orders');
     const tbody = document.getElementById('ordersFullBody');
@@ -74,11 +112,24 @@
         <td>${paymentLabel(o.paymentMethod)}<br>${paymentStatusBadge(o.paymentStatus)}</td>
         <td style="font-size:12px;">${o.transactionId || '-'}<br>${o.deliveryAreaLabel || ''}</td>
         <td>${statusSelect(o)}</td>
+        <td>${courierCell(o)}</td>
         <td class="amount-cell">${formatBDT(o.total)}</td>
         <td class="order-actions">${payActions}${deleteBtn}</td>
       </tr>`;
       })
       .join('');
+  }
+
+  async function loadCourierBalance() {
+    const box = document.getElementById('courierBalance');
+    if (!box) return;
+    try {
+      const { balance } = await adminApi('/courier/balance');
+      box.textContent = `🚚 Steadfast ব্যালেন্স: ${formatBDT(balance)}`;
+      box.classList.toggle('courier-balance-low', Number(balance) < 500);
+    } catch {
+      box.textContent = '';
+    }
   }
 
   function initOrdersPage() {
@@ -105,9 +156,13 @@
       const verifyBtn = e.target.closest('[data-verify]');
       const rejectBtn = e.target.closest('[data-reject]');
       const deleteBtn = e.target.closest('[data-delete]');
+      const courierSendBtn = e.target.closest('[data-courier-send]');
+      const courierSyncBtn = e.target.closest('[data-courier-sync]');
       try {
         if (verifyBtn) await verifyPayment(verifyBtn.getAttribute('data-verify'));
         if (rejectBtn) await rejectPayment(rejectBtn.getAttribute('data-reject'));
+        if (courierSendBtn) await sendToCourier(courierSendBtn.getAttribute('data-courier-send'));
+        if (courierSyncBtn) await syncCourierStatus(courierSyncBtn.getAttribute('data-courier-sync'));
         if (deleteBtn) {
           await deleteOrder(
             deleteBtn.getAttribute('data-delete'),
@@ -119,6 +174,7 @@
       }
     });
 
+    loadCourierBalance();
     return load();
   }
 

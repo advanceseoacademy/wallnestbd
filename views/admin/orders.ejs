@@ -4,10 +4,13 @@
   <div class="topbar"><div><div class="page-title">অর্ডার ম্যানেজমেন্ট</div><div class="page-subtitle">স্ট্যাটাস আপডেট ও পেমেন্ট যাচাই</div></div></div>
   <div class="content">
     <div class="card">
-      <div class="card-header"><div class="card-title">সব অর্ডার</div></div>
+      <div class="card-header">
+        <div class="card-title">সব অর্ডার</div>
+        <div class="courier-balance" id="courierBalance"></div>
+      </div>
       <div class="table-wrap">
         <table>
-          <thead><tr><th>অর্ডার</th><th>কাস্টমার</th><th>পেমেন্ট</th><th>এরিয়া / Trx</th><th>স্ট্যাটাস</th><th>মোট</th><th>অ্যাকশন</th></tr></thead>
+          <thead><tr><th>অর্ডার</th><th>কাস্টমার</th><th>পেমেন্ট</th><th>এরিয়া / Trx</th><th>স্ট্যাটাস</th><th>কুরিয়ার</th><th>মোট</th><th>অ্যাকশন</th></tr></thead>
           <tbody id="ordersFullBody"></tbody>
         </table>
       </div>
@@ -15,5 +18,5 @@
   </div>
 </div>
 <script src="/js/admin-common.js?v=11"></script>
-<script src="/js/admin-orders.js?v=3"></script>
+<script src="/js/admin-orders.js?v=4"></script>
 </body></html>

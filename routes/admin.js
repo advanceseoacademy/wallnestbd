@@ -200,31 +200,10 @@ api.get('/stats', async (_req, res) => {
   }
 });
 
-api.get('/orders', async (req, res) => {
+api.get('/orders', async (_req, res) => {
   try {
-    const { data, error } = await supabase
-      .from('orders')
-      .select('*, order_items(product_name, product_icon, quantity, line_total)')
-      .order('created_at', { ascending: false })
-      .limit(50);
-    if (error) throw error;
-
-    res.json({
-      orders: (data || []).map((o) => ({
-        id: o.id,
-        orderNumber: o.order_number,
-        customer: o.shipping_name,
-        phone: o.shipping_phone,
-        status: o.status,
-        paymentMethod: o.payment_method,
-        paymentStatus: o.payment_status,
-        transactionId: o.transaction_id,
-        total: Number(o.total),
-        createdAt: o.created_at,
-        items: o.order_items || [],
-        firstProduct: o.order_items?.[0],
-      })),
-    });
+    const bridge = require('../lib/adminApiBridge');
+    res.json(await bridge.getOrders());
   } catch (err) {
     res.status(500).json({ error: err.message });
   }
@@ -264,6 +243,33 @@ api.delete('/orders/:id', async (req, res) => {
     const { error } = await supabase.from('orders').delete().eq('id', req.params.id);
     if (error) throw error;
     res.json({ ok: true, orderNumber: existing.order_number });
+  } catch (err) {
+    res.status(400).json({ error: err.message });
+  }
+});
+
+api.post('/orders/:id/courier', async (req, res) => {
+  try {
+    const bridge = require('../lib/adminApiBridge');
+    res.json(await bridge.sendOrderToCourier(req.params.id));
+  } catch (err) {
+    res.status(400).json({ error: err.message });
+  }
+});
+
+api.post('/orders/:id/courier/sync', async (req, res) => {
+  try {
+    const bridge = require('../lib/adminApiBridge');
+    res.json(await bridge.syncOrderCourierStatus(req.params.id));
+  } catch (err) {
+    res.status(400).json({ error: err.message });
+  }
+});
+
+api.get('/courier/balance', async (_req, res) => {
+  try {
+    const bridge = require('../lib/adminApiBridge');
+    res.json(await bridge.getCourierBalance());
   } catch (err) {
     res.status(400).json({ error: err.message });
   }

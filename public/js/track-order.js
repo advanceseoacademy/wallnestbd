@@ -80,6 +80,15 @@ function renderOrderResult(order) {
     addr.style.display = order.shippingAddress ? '' : 'none';
   }
 
+  const courier = document.getElementById('resultCourier');
+  if (courier) {
+    setHidden(courier, !order.courierTrackingCode);
+    if (order.courierTrackingCode) {
+      set('resultCourierCode', order.courierTrackingCode);
+      set('resultCourierStatus', order.courierStatusLabel || order.courierStatus);
+    }
+  }
+
   const wrap = document.getElementById('trackProgressWrap');
   const bar = document.getElementById('trackingBar');
   if (order.status === 'cancelled') {

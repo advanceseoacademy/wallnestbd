@@ -3096,6 +3096,32 @@
     margin-bottom: 20px;
     line-height: 1.5;
   }
+  .track-courier {
+    background: var(--bg);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-sm);
+    padding: 14px 16px;
+    margin-bottom: 20px;
+  }
+  .track-courier-head {
+    font-size: 13px;
+    font-weight: 700;
+    margin-bottom: 10px;
+  }
+  .track-courier-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 12px;
+    font-size: 13px;
+    padding: 4px 0;
+  }
+  .track-courier-row span { color: var(--text-muted); }
+  .track-courier-row strong { font-weight: 600; }
+  #resultCourierCode {
+    font-family: 'JetBrains Mono', monospace;
+    letter-spacing: 0.5px;
+  }
   .track-progress-wrap {
     background: var(--bg);
     border-radius: var(--radius-sm);
