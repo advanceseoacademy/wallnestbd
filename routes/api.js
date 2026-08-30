@@ -20,6 +20,7 @@ const { mapProduct } = require('../lib/mapProduct');
 const {
   queueVerificationEmail,
   queueOrderConfirmationEmail,
+  queueNewOrderOwnerEmail,
 } = require('../lib/email/mailer');
 const {
   registerUserWithVerification,
@@ -288,6 +289,7 @@ router.post('/orders', async (req, res) => {
     await clearCart(req);
 
     queueOrderConfirmationEmail(order, orderItems);
+    queueNewOrderOwnerEmail(order, orderItems);
 
     res.json({
       ok: true,
