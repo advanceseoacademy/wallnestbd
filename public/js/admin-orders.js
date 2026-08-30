@@ -43,6 +43,16 @@
     load();
   }
 
+  async function deleteOrder(id, orderNumber) {
+    const label = orderNumber ? `অর্ডার ${orderNumber}` : 'এই অর্ডার';
+    if (!confirm(`${label} স্থায়ীভাবে ডিলিট করবেন?\n\nএটি আর ফিরিয়ে আনা যাবে না।`)) return;
+    await adminApi(`/orders/${id}`, { method: 'DELETE' });
+    if (typeof showToast === 'function') {
+      showToast('অর্ডার ডিলিট হয়েছে');
+    }
+    load();
+  }
+
   async function load() {
     const { orders } = await adminApi('/orders');
     const tbody = document.getElementById('ordersFullBody');
@@ -55,7 +65,8 @@
                <button class="action-btn" data-reject="${o.id}">❌</button>`
             : o.paymentMethod === 'cod'
               ? `<span class="muted-action">COD</span>`
-              : '-';
+              : '';
+        const deleteBtn = `<button class="action-btn action-btn-danger" data-delete="${o.id}" data-order-number="${o.orderNumber || ''}" title="অর্ডার ডিলিট করুন">🗑️</button>`;
         return `
       <tr>
         <td><span class="order-id">${o.orderNumber || '-'}</span><br><small style="color:var(--muted)">${new Date(o.createdAt).toLocaleString('bn-BD')}</small></td>
@@ -64,7 +75,7 @@
         <td style="font-size:12px;">${o.transactionId || '-'}<br>${o.deliveryAreaLabel || ''}</td>
         <td>${statusSelect(o)}</td>
         <td class="amount-cell">${formatBDT(o.total)}</td>
-        <td class="order-actions">${payActions}</td>
+        <td class="order-actions">${payActions}${deleteBtn}</td>
       </tr>`;
       })
       .join('');
@@ -93,9 +104,16 @@
     tbody.addEventListener('click', async (e) => {
       const verifyBtn = e.target.closest('[data-verify]');
       const rejectBtn = e.target.closest('[data-reject]');
+      const deleteBtn = e.target.closest('[data-delete]');
       try {
         if (verifyBtn) await verifyPayment(verifyBtn.getAttribute('data-verify'));
         if (rejectBtn) await rejectPayment(rejectBtn.getAttribute('data-reject'));
+        if (deleteBtn) {
+          await deleteOrder(
+            deleteBtn.getAttribute('data-delete'),
+            deleteBtn.getAttribute('data-order-number')
+          );
+        }
       } catch (err) {
         alert(err.message || 'অ্যাকশন ব্যর্থ');
       }

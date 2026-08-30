@@ -250,6 +250,25 @@ api.patch('/orders/:id', async (req, res) => {
   }
 });
 
+api.delete('/orders/:id', async (req, res) => {
+  try {
+    const { data: existing, error: findErr } = await supabase
+      .from('orders')
+      .select('id, order_number')
+      .eq('id', req.params.id)
+      .maybeSingle();
+    if (findErr) throw findErr;
+    if (!existing) return res.status(404).json({ error: 'অর্ডার পাওয়া যায়নি' });
+
+    // order_items rows are removed by the ON DELETE CASCADE foreign key.
+    const { error } = await supabase.from('orders').delete().eq('id', req.params.id);
+    if (error) throw error;
+    res.json({ ok: true, orderNumber: existing.order_number });
+  } catch (err) {
+    res.status(400).json({ error: err.message });
+  }
+});
+
 api.get('/products', async (_req, res) => {
   try {
     const { data, error } = await supabase

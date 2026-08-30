@@ -617,6 +617,17 @@ a.action-btn {
   font-size: 12px;
   font-weight: 600;
 }
+.order-actions {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  flex-wrap: wrap;
+}
+.action-btn-danger:hover {
+  background: var(--red-dim);
+  color: var(--red);
+  border-color: rgba(220, 38, 38, 0.35);
+}
 
 /* ── TOP PRODUCTS ── */
 .top-product-item {

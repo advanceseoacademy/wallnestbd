@@ -64,6 +64,15 @@ export class AdminController {
     }
   }
 
+  @Delete('orders/:id')
+  async deleteOrder(@Param('id') id: string) {
+    try {
+      return await bridge.deleteOrder(id);
+    } catch (e) {
+      throw new BadRequestException(e.message);
+    }
+  }
+
   @Get('products')
   async products() {
     try {
